@@ -1,0 +1,12 @@
+export const USER_ROLES = ['CLIENT', 'FREELANCER'] as const;
+export const APPLICATION_STATUSES = ['PENDING', 'ACCEPTED', 'REJECTED'] as const;
+export const RECRUITMENT_STATUSES = ['SCHEDULED', 'OPEN', 'CLOSED'] as const;
+export const TRANSACTION_STATUSES = [
+  'NONE',
+  'PRICE_AGREEMENT',
+  'CONTRACT_PENDING',
+  'PAYMENT_PENDING',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+] as const;

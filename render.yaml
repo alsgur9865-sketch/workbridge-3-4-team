@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: workbridge-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm install && npm run build:backend
+    startCommand: npm run start --workspace @workbridge/backend
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: 24
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: FRONTEND_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false

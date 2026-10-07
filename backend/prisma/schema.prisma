@@ -1,0 +1,377 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  FREELANCER
+}
+
+enum OAuthProvider {
+  GOOGLE
+  KAKAO
+}
+
+enum ProjectRecruitmentStatus {
+  SCHEDULED
+  OPEN
+  CLOSED
+}
+
+enum ProjectTransactionStatus {
+  NONE
+  PRICE_AGREEMENT
+  CONTRACT_PENDING
+  PAYMENT_PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum PriceOfferStatus {
+  NONE
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum AIAnalysisStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+enum ContractStatus {
+  DRAFT
+  PARTIALLY_SIGNED
+  SIGNED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  READY
+  PAID
+  ESCROWED
+  RELEASED
+  FAILED
+  REFUNDED
+}
+
+enum DeliveryStatus {
+  SUBMITTED
+  APPROVED
+}
+
+enum NotificationType {
+  NEW_APPLICATION
+  APPLICATION_ACCEPTED
+  APPLICATION_REJECTED
+  APPLICATION_AUTO_REJECTED
+  PROJECT_CLOSED
+  PRICE_OFFERED
+  PRICE_OFFER_ACCEPTED
+  PRICE_OFFER_REJECTED
+  CONTRACT_SIGN_REQUEST
+  CONTRACT_SIGNED
+  PAYMENT_COMPLETED
+  DELIVERY_SUBMITTED
+  PROJECT_COMPLETED
+  REVIEW_REQUEST
+}
+
+model User {
+  id                String        @id @default(uuid()) @db.Uuid
+  email             String        @unique @db.VarChar(255)
+  passwordHash      String?       @db.VarChar(255)
+  role              UserRole?
+  name              String?       @db.VarChar(100)
+  bio               String?
+  profileImageUrl   String?
+  oauthProvider     OAuthProvider?
+  oauthProviderId   String?       @db.VarChar(255)
+  refreshTokenHash  String?       @db.VarChar(255)
+  createdAt         DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @db.Timestamptz(3)
+
+  clientProfile     ClientProfile?
+  freelancerProfile FreelancerProfile?
+  projects          Project[]         @relation("ClientProjects")
+  applications      Application[]     @relation("FreelancerApplications")
+  aiPriceAnalyses   AiPriceAnalysis[] @relation("ClientAIAnalyses")
+  reviewsWritten    Review[]           @relation("ReviewsWritten")
+  reviewsReceived   Review[]           @relation("ReviewsReceived")
+  notifications     Notification[]
+  bookmarks         Bookmark[]
+
+  @@unique([oauthProvider, oauthProviderId])
+  @@index([role])
+}
+
+model ClientProfile {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @unique @db.Uuid
+  companyName String   @db.VarChar(150)
+  industry    String   @db.VarChar(100)
+  websiteUrl  String?
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model FreelancerProfile {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @unique @db.Uuid
+  mainCategory  String   @db.VarChar(100)
+  careerYears   Int
+  desiredRate   Decimal  @db.Decimal(15, 2)
+  portfolioUrl  String?
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @db.Timestamptz(3)
+
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skills FreelancerSkill[]
+}
+
+model Skill {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  freelancerSkills FreelancerSkill[]
+  projectSkills    ProjectSkill[]
+}
+
+model FreelancerSkill {
+  freelancerProfileId String   @db.Uuid
+  skillId              String   @db.Uuid
+  createdAt            DateTime @default(now()) @db.Timestamptz(3)
+
+  freelancerProfile FreelancerProfile @relation(fields: [freelancerProfileId], references: [id], onDelete: Cascade)
+  skill             Skill             @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([freelancerProfileId, skillId])
+  @@index([skillId])
+}
+
+model Project {
+  id                    String                   @id @default(uuid()) @db.Uuid
+  clientId              String                   @db.Uuid
+  title                 String                   @db.VarChar(200)
+  description           String
+  category              String                   @db.VarChar(100)
+  budget                Decimal                  @db.Decimal(15, 2)
+  workStartAt           DateTime                 @db.Timestamptz(3)
+  workEndAt             DateTime                 @db.Timestamptz(3)
+  recruitmentStartAt    DateTime?                @db.Timestamptz(3)
+  recruitmentDeadline   DateTime                 @db.Timestamptz(3)
+  recruitmentStatus     ProjectRecruitmentStatus
+  transactionStatus     ProjectTransactionStatus @default(NONE)
+  selectedApplicationId String?                  @unique @db.Uuid
+  closedAt              DateTime?                @db.Timestamptz(3)
+  createdAt             DateTime                 @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime                 @updatedAt @db.Timestamptz(3)
+  deletedAt             DateTime?                @db.Timestamptz(3)
+
+  client              User              @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Restrict)
+  applications        Application[]     @relation("ProjectApplications")
+  selectedApplication Application?      @relation("SelectedApplication", fields: [selectedApplicationId], references: [id], onDelete: SetNull)
+  skills              ProjectSkill[]
+  aiPriceAnalyses     AiPriceAnalysis[]
+  contract            Contract?
+  bookmarks           Bookmark[]
+
+  @@index([clientId])
+  @@index([category])
+  @@index([recruitmentStatus])
+  @@index([transactionStatus])
+  @@index([recruitmentDeadline])
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@index([recruitmentStatus, deletedAt, createdAt])
+}
+
+model ProjectSkill {
+  projectId String   @db.Uuid
+  skillId   String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skill   Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, skillId])
+  @@index([skillId])
+}
+
+model Application {
+  id               String            @id @default(uuid()) @db.Uuid
+  projectId        String            @db.Uuid
+  freelancerId     String            @db.Uuid
+  introduction     String
+  proposedAmount   Decimal           @db.Decimal(15, 2)
+  estimatedDays    Int
+  status           ApplicationStatus @default(PENDING)
+  clientOfferAmount Decimal?         @db.Decimal(15, 2)
+  priceOfferStatus PriceOfferStatus  @default(NONE)
+  offeredAt        DateTime?         @db.Timestamptz(3)
+  respondedAt      DateTime?         @db.Timestamptz(3)
+  createdAt        DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime          @updatedAt @db.Timestamptz(3)
+
+  project           Project   @relation("ProjectApplications", fields: [projectId], references: [id], onDelete: Cascade)
+  freelancer        User      @relation("FreelancerApplications", fields: [freelancerId], references: [id], onDelete: Restrict)
+  selectedByProject Project?  @relation("SelectedApplication")
+  contract          Contract?
+
+  @@unique([projectId, freelancerId])
+  @@index([projectId, status])
+  @@index([freelancerId, status])
+  @@index([createdAt])
+}
+
+model AiPriceAnalysis {
+  id                   String           @id @default(uuid()) @db.Uuid
+  clientId             String           @db.Uuid
+  projectId            String?          @db.Uuid
+  inputDescription     String
+  resultJson           Json?            @db.JsonB
+  estimatedTotalAmount Decimal?         @db.Decimal(15, 2)
+  modelName            String?          @db.VarChar(100)
+  status               AIAnalysisStatus @default(PENDING)
+  errorMessage         String?
+  createdAt            DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime         @updatedAt @db.Timestamptz(3)
+
+  client  User     @relation("ClientAIAnalyses", fields: [clientId], references: [id], onDelete: Restrict)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([projectId])
+  @@index([status])
+  @@map("AIPriceAnalysis")
+}
+
+model Contract {
+  id                 String         @id @default(uuid()) @db.Uuid
+  projectId          String         @unique @db.Uuid
+  applicationId      String         @unique @db.Uuid
+  agreedAmount       Decimal        @db.Decimal(15, 2)
+  contractStartAt    DateTime       @db.Timestamptz(3)
+  contractEndAt      DateTime       @db.Timestamptz(3)
+  contractContent    Json?          @db.JsonB
+  clientSignedAt     DateTime?      @db.Timestamptz(3)
+  freelancerSignedAt DateTime?      @db.Timestamptz(3)
+  status             ContractStatus @default(DRAFT)
+  createdAt          DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt          DateTime       @updatedAt @db.Timestamptz(3)
+
+  project     Project     @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Restrict)
+  payment     Payment?
+  delivery    Delivery?
+  reviews     Review[]
+
+  @@index([status])
+}
+
+model Payment {
+  id               String        @id @default(uuid()) @db.Uuid
+  contractId       String        @unique @db.Uuid
+  provider         String        @db.VarChar(50)
+  orderId          String        @unique @db.VarChar(255)
+  paymentKey       String?       @unique @db.VarChar(255)
+  amount           Decimal       @db.Decimal(15, 2)
+  platformFee      Decimal?      @db.Decimal(15, 2)
+  settlementAmount Decimal?      @db.Decimal(15, 2)
+  status           PaymentStatus @default(READY)
+  paidAt           DateTime?     @db.Timestamptz(3)
+  escrowedAt       DateTime?     @db.Timestamptz(3)
+  releasedAt       DateTime?     @db.Timestamptz(3)
+  refundedAt       DateTime?     @db.Timestamptz(3)
+  failureCode      String?       @db.VarChar(100)
+  failureMessage   String?
+  createdAt        DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime      @updatedAt @db.Timestamptz(3)
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Restrict)
+
+  @@index([contractId, status])
+  @@index([status])
+}
+
+model Delivery {
+  id             String         @id @default(uuid()) @db.Uuid
+  contractId     String         @unique @db.Uuid
+  message        String
+  resultUrl      String?
+  attachmentUrls Json?          @db.JsonB
+  status         DeliveryStatus @default(SUBMITTED)
+  submittedAt    DateTime       @db.Timestamptz(3)
+  approvedAt     DateTime?      @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Restrict)
+
+  @@index([status])
+}
+
+model Review {
+  id         String   @id @default(uuid()) @db.Uuid
+  contractId String   @db.Uuid
+  reviewerId String   @db.Uuid
+  revieweeId String   @db.Uuid
+  rating     Int      @db.SmallInt
+  content    String
+  tags       Json?    @db.JsonB
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+
+  contract Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  reviewer User     @relation("ReviewsWritten", fields: [reviewerId], references: [id], onDelete: Restrict)
+  reviewee User     @relation("ReviewsReceived", fields: [revieweeId], references: [id], onDelete: Restrict)
+
+  @@unique([contractId, reviewerId, revieweeId])
+  @@index([revieweeId, createdAt])
+  @@index([contractId])
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(200)
+  message   String
+  targetUrl String?
+  readAt    DateTime?        @db.Timestamptz(3)
+  createdAt DateTime         @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+}
+
+model Bookmark {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  projectId String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId, createdAt])
+  @@index([projectId])
+}

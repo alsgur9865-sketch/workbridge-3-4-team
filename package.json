@@ -1,0 +1,55 @@
+{
+  "name": "workbridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24 <25",
+    "npm": ">=11"
+  },
+  "scripts": {
+    "dev": "concurrently --names frontend,backend --prefix-colors cyan,magenta \"npm run dev --workspace @workbridge/frontend\" \"npm run dev --workspace @workbridge/backend\"",
+    "dev:frontend": "npm run dev --workspace @workbridge/frontend",
+    "dev:backend": "npm run dev --workspace @workbridge/backend",
+    "build": "npm run build --workspace @workbridge/shared && npm run build --workspace @workbridge/backend && npm run build --workspace @workbridge/frontend",
+    "build:frontend": "npm run build --workspace @workbridge/frontend",
+    "build:backend": "npm run build --workspace @workbridge/backend",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace @workbridge/backend",
+    "db:migrate": "npm run db:migrate --workspace @workbridge/backend",
+    "db:migrate:init": "npm run db:migrate --workspace @workbridge/backend -- --name init",
+    "db:deploy": "npm run db:deploy --workspace @workbridge/backend",
+    "db:seed": "npm run db:seed --workspace @workbridge/backend",
+    "db:studio": "npm run db:studio --workspace @workbridge/backend",
+    "setup:env": "node scripts/setup-env.mjs",
+    "postinstall": "npm run db:generate"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "concurrently": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.8.0",
+    "typescript-eslint": "^8.0.0"
+  },
+  "allowScripts": {
+    "bcrypt@6.0.0": true,
+    "prisma@7.10.0": true,
+    "@prisma/engines@7.10.0": true,
+    "esbuild@0.27.7": true,
+    "esbuild@0.28.2": true,
+    "@scarf/scarf": false
+  }
+}
