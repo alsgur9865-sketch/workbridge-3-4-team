@@ -25,7 +25,8 @@ function setRefreshCookie(response: Response, refreshToken: string) {
 }
 
 function clearRefreshCookie(response: Response) {
-  const { maxAge: _maxAge, ...options } = refreshCookieOptions();
+  const options = refreshCookieOptions();
+  delete options.maxAge;
   response.clearCookie(REFRESH_COOKIE_NAME, options);
 }
 
