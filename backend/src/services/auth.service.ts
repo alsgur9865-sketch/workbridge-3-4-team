@@ -1,7 +1,51 @@
 import { AppError } from '@/errors/AppError';
-import { createLocalUser, findUserByEmail } from '@/repositories/auth.repository';
-import type { SignupInput } from '@/schemas/auth.schema';
-import { hashPassword } from '@/utils/password';
+import {
+  clearRefreshTokenHash,
+  createLocalUser,
+  findUserByEmail,
+  findUserById,
+  updateRefreshTokenHash,
+} from '@/repositories/auth.repository';
+import type { LoginInput, SignupInput } from '@/schemas/auth.schema';
+import { hashPassword, verifyPassword } from '@/utils/password';
+import {
+  hashRefreshToken,
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from '@/utils/token';
+
+function toAuthUser(user: {
+  id: string;
+  email: string;
+  name: string | null;
+  role: 'CLIENT' | 'FREELANCER' | null;
+}) {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  };
+}
+
+async function createSession(user: {
+  id: string;
+  email: string;
+  name: string | null;
+  role: 'CLIENT' | 'FREELANCER' | null;
+}) {
+  const accessToken = signAccessToken({ id: user.id, role: user.role });
+  const refreshToken = signRefreshToken(user.id);
+
+  await updateRefreshTokenHash(user.id, hashRefreshToken(refreshToken));
+
+  return {
+    user: toAuthUser(user),
+    accessToken,
+    refreshToken,
+  };
+}
 
 export async function signup(input: SignupInput) {
   const email = input.email.trim().toLowerCase();
@@ -30,6 +74,47 @@ export async function signup(input: SignupInput) {
       throw new AppError(409, 'EMAIL_ALREADY_IN_USE', 'This email is already registered.');
     }
 
+    throw error;
+  }
+}
+
+export async function login(input: LoginInput) {
+  const email = input.email.trim().toLowerCase();
+  const user = await findUserByEmail(email);
+
+  if (!user?.passwordHash || !(await verifyPassword(input.password, user.passwordHash))) {
+    throw new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
+  }
+
+  return createSession(user);
+}
+
+export async function refreshSession(refreshToken: string) {
+  const { userId } = verifyRefreshToken(refreshToken);
+  const user = await findUserById(userId);
+
+  if (!user?.refreshTokenHash || user.refreshTokenHash !== hashRefreshToken(refreshToken)) {
+    throw new AppError(401, 'INVALID_REFRESH_TOKEN', 'The refresh token is no longer valid.');
+  }
+
+  return createSession(user);
+}
+
+export async function logout(refreshToken?: string) {
+  if (!refreshToken) {
+    return;
+  }
+
+  try {
+    const { userId } = verifyRefreshToken(refreshToken);
+    await clearRefreshTokenHash(userId);
+  } catch (error) {
+    if (
+      error instanceof AppError &&
+      (error.code === 'INVALID_REFRESH_TOKEN' || error.code === 'AUTH_NOT_CONFIGURED')
+    ) {
+      return;
+    }
     throw error;
   }
 }
