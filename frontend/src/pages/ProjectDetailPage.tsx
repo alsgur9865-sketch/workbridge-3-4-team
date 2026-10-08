@@ -7,6 +7,7 @@ import {
   useProject,
   useToggleBookmark,
 } from '@/features/projects/projects.api';
+import { useAuthStore } from '@/stores/auth.store';
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR');
 const dateFormatter = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'long' });
@@ -17,6 +18,7 @@ export function ProjectDetailPage() {
   const projectQuery = useProject(projectId);
   const deleteMutation = useDeleteProject();
   const bookmarkMutation = useToggleBookmark(projectId, projectQuery.data?.isBookmarked ?? false);
+  const user = useAuthStore((state) => state.user);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (projectQuery.isPending) {
@@ -40,6 +42,7 @@ export function ProjectDetailPage() {
 
   const project = projectQuery.data;
   const clientName = project.client.companyName ?? project.client.name ?? 'WorkBridge 의뢰인';
+  const canManageProject = user?.role === 'CLIENT' && user.id === project.clientId;
 
   async function handleDelete() {
     try {
@@ -153,11 +156,8 @@ export function ProjectDetailPage() {
               {project.isBookmarked ? '북마크 해제' : '북마크 추가'}
             </button>
 
-            {import.meta.env.DEV ? (
+            {canManageProject ? (
               <div className="mt-7 grid gap-2 border-t border-slate-100 pt-5">
-                <p className="text-xs leading-5 text-slate-400">
-                  인증 기능이 연결되기 전까지 개발용 의뢰인으로 관리합니다.
-                </p>
                 <Link
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-300 text-sm font-bold text-slate-700 hover:border-brand-300 hover:text-brand-700"
                   to={`/projects/${project.id}/edit`}

@@ -1,5 +1,8 @@
-import { BriefcaseBusiness, ChevronRight } from 'lucide-react';
-import { Link, Outlet } from 'react-router-dom';
+import { BriefcaseBusiness, ChevronRight, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { logout } from '@/features/auth/api';
+import { useAuthStore } from '@/stores/auth.store';
 
 const navigation = [
   { label: '프로젝트 찾기', href: '/#projects' },
@@ -8,6 +11,27 @@ const navigation = [
 ];
 
 export function AppLayout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  if (user && user.role === null && location.pathname !== '/select-role') {
+    return <Navigate to="/select-role" replace />;
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      clearSession();
+      setIsLoggingOut(false);
+      navigate('/');
+    }
+  }
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
@@ -31,18 +55,37 @@ export function AppLayout() {
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              className="hidden px-3 py-2 text-sm font-semibold text-slate-700 transition hover:text-brand-700 sm:inline-flex"
-              to="/login"
-            >
-              로그인
-            </Link>
-            <Link
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-              to="/signup"
-            >
-              무료로 시작하기
-            </Link>
+            {user ? (
+              <>
+                <span className="hidden max-w-40 truncate text-sm font-semibold text-slate-700 sm:inline">
+                  {user.name ?? user.email}
+                </span>
+                <button
+                  type="button"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  <LogOut className="size-4" aria-hidden="true" />
+                  {isLoggingOut ? '로그아웃 중' : '로그아웃'}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  className="hidden px-3 py-2 text-sm font-semibold text-slate-700 transition hover:text-brand-700 sm:inline-flex"
+                  to="/login"
+                >
+                  로그인
+                </Link>
+                <Link
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                  to="/signup"
+                >
+                  무료로 시작하기
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>

@@ -99,26 +99,15 @@ const projectKeys = {
   detail: (projectId: string) => [...projectKeys.details(), projectId] as const,
 };
 
-const developmentClientHeaders = import.meta.env.DEV
-  ? { 'X-WorkBridge-Demo-User': 'client@workbridge.test' }
-  : undefined;
-
-const developmentViewerHeaders = import.meta.env.DEV
-  ? { 'X-WorkBridge-Demo-User': 'freelancer2@workbridge.test' }
-  : undefined;
-
 export async function fetchProjects(filters: ProjectFilters = {}) {
   const response = await apiClient.get<ProjectListResponse>('/projects', {
     params: filters,
-    headers: developmentViewerHeaders,
   });
   return response.data;
 }
 
 export async function fetchProject(projectId: string) {
-  const response = await apiClient.get<ProjectResponse>(`/projects/${projectId}`, {
-    headers: developmentViewerHeaders,
-  });
+  const response = await apiClient.get<ProjectResponse>(`/projects/${projectId}`);
   return response.data.data;
 }
 
@@ -142,9 +131,7 @@ export function useCreateProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: ProjectInput) => {
-      const response = await apiClient.post<ProjectResponse>('/projects', input, {
-        headers: developmentClientHeaders,
-      });
+      const response = await apiClient.post<ProjectResponse>('/projects', input);
       return response.data.data;
     },
     onSuccess: (project) => {
@@ -158,9 +145,7 @@ export function useUpdateProject(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: ProjectInput) => {
-      const response = await apiClient.patch<ProjectResponse>(`/projects/${projectId}`, input, {
-        headers: developmentClientHeaders,
-      });
+      const response = await apiClient.patch<ProjectResponse>(`/projects/${projectId}`, input);
       return response.data.data;
     },
     onSuccess: (project) => {
@@ -174,7 +159,7 @@ export function useDeleteProject() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (projectId: string) => {
-      await apiClient.delete(`/projects/${projectId}`, { headers: developmentClientHeaders });
+      await apiClient.delete(`/projects/${projectId}`);
       return projectId;
     },
     onSuccess: (projectId) => {
@@ -189,17 +174,11 @@ export function useToggleBookmark(projectId: string, isBookmarked: boolean) {
   return useMutation({
     mutationFn: async () => {
       if (isBookmarked) {
-        await apiClient.delete(`/projects/${projectId}/bookmark`, {
-          headers: developmentViewerHeaders,
-        });
+        await apiClient.delete(`/projects/${projectId}/bookmark`);
         return false;
       }
 
-      await apiClient.post(
-        `/projects/${projectId}/bookmark`,
-        {},
-        { headers: developmentViewerHeaders },
-      );
+      await apiClient.post(`/projects/${projectId}/bookmark`, {});
       return true;
     },
     onSuccess: () => {
@@ -215,7 +194,6 @@ export function usePriceEstimate() {
       const response = await apiClient.post<{ success: true; data: PriceEstimateResult }>(
         '/projects/price-estimate',
         input,
-        { headers: developmentClientHeaders },
       );
       return response.data.data;
     },
