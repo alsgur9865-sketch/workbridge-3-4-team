@@ -6,6 +6,7 @@ Base URL: `/api/v1`
 
 - `GET /health`
 - `GET /health/database`
+- `POST /auth/signup`
 
 ## Planned groups
 
