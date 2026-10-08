@@ -30,8 +30,7 @@
     "db:deploy": "npm run db:deploy --workspace @workbridge/backend",
     "db:seed": "npm run db:seed --workspace @workbridge/backend",
     "db:studio": "npm run db:studio --workspace @workbridge/backend",
-    "setup:env": "node scripts/setup-env.mjs",
-    "postinstall": "npm run db:generate"
+    "setup:env": "node scripts/setup-env.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
