@@ -110,12 +110,24 @@ export function refreshTokenMaxAgeMs() {
 
   const value = Number(match[1]);
   const unit = match[2];
-  const multiplier = {
-    s: 1000,
-    m: 60 * 1000,
-    h: 60 * 60 * 1000,
-    d: 24 * 60 * 60 * 1000,
-  }[unit];
+
+  let multiplier: number;
+  switch (unit) {
+    case 's':
+      multiplier = 1000;
+      break;
+    case 'm':
+      multiplier = 60 * 1000;
+      break;
+    case 'h':
+      multiplier = 60 * 60 * 1000;
+      break;
+    case 'd':
+      multiplier = 24 * 60 * 60 * 1000;
+      break;
+    default:
+      return 14 * 24 * 60 * 60 * 1000;
+  }
 
   return value * multiplier;
 }
