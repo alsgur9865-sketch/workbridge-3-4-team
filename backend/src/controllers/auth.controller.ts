@@ -1,17 +1,20 @@
 import type { CookieOptions, RequestHandler, Response } from 'express';
 import { env } from '@/config/env';
 import { AppError } from '@/errors/AppError';
-import { loginSchema, signupSchema } from '@/schemas/auth.schema';
-import { login, logout, refreshSession, signup } from '@/services/auth.service';
+import { getAuthUser } from '@/middlewares/auth.middleware';
+import { loginSchema, selectRoleSchema, signupSchema } from '@/schemas/auth.schema';
+import { login, logout, refreshSession, selectRole, signup } from '@/services/auth.service';
 import { refreshTokenMaxAgeMs } from '@/utils/token';
 
 const REFRESH_COOKIE_NAME = 'workbridge_refresh_token';
 
 function refreshCookieOptions(): CookieOptions {
+  const isProduction = env.NODE_ENV === 'production';
+
   return {
     httpOnly: true,
-    secure: env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax',
     path: '/api/v1/auth',
     maxAge: refreshTokenMaxAgeMs(),
   };
@@ -41,6 +44,22 @@ export const signupController: RequestHandler = async (request, response) => {
 export const loginController: RequestHandler = async (request, response) => {
   const input = loginSchema.parse(request.body);
   const session = await login(input);
+
+  setRefreshCookie(response, session.refreshToken);
+
+  response.json({
+    success: true,
+    data: {
+      user: session.user,
+      accessToken: session.accessToken,
+    },
+  });
+};
+
+export const selectRoleController: RequestHandler = async (request, response) => {
+  const input = selectRoleSchema.parse(request.body);
+  const authUser = getAuthUser(request);
+  const session = await selectRole(authUser.id, input.role);
 
   setRefreshCookie(response, session.refreshToken);
 

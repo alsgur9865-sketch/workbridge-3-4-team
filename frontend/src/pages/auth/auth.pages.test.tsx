@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import * as authApi from '@/features/auth/api';
 import { LoginPage } from '@/pages/auth/LoginPage';
+import { RoleSelectionPage } from '@/pages/auth/RoleSelectionPage';
 import { SignupPage } from '@/pages/auth/SignupPage';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -11,6 +12,7 @@ vi.mock('@/features/auth/api', async () => {
     ...actual,
     login: vi.fn(),
     signup: vi.fn(),
+    selectRole: vi.fn(),
     logout: vi.fn(),
   };
 });
@@ -30,7 +32,7 @@ beforeEach(() => {
 });
 
 describe('LoginPage', () => {
-  it('logs in and stores the session in Zustand', async () => {
+  it('stores the session and sends a roleless user to role selection', async () => {
     api.login.mockResolvedValue({
       accessToken: 'access-token',
       user,
@@ -40,7 +42,7 @@ describe('LoginPage', () => {
       <MemoryRouter initialEntries={['/login']}>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<p>홈 화면</p>} />
+          <Route path="/select-role" element={<p>역할 선택 화면</p>} />
         </Routes>
       </MemoryRouter>,
     );
@@ -53,7 +55,7 @@ describe('LoginPage', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: '로그인' }));
 
-    expect(await screen.findByText('홈 화면')).toBeInTheDocument();
+    expect(await screen.findByText('역할 선택 화면')).toBeInTheDocument();
     expect(useAuthStore.getState().accessToken).toBe('access-token');
     expect(useAuthStore.getState().user).toEqual(user);
   });
@@ -133,5 +135,32 @@ describe('SignupPage', () => {
 
     expect(await screen.findByText('비밀번호가 서로 일치하지 않습니다.')).toBeInTheDocument();
     expect(api.signup).not.toHaveBeenCalled();
+  });
+});
+
+describe('RoleSelectionPage', () => {
+  it('selects a freelancer role, updates Zustand, and moves home', async () => {
+    useAuthStore.getState().setSession('old-access-token', user);
+    api.selectRole.mockResolvedValue({
+      accessToken: 'new-access-token',
+      user: { ...user, role: 'FREELANCER' },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/select-role']}>
+        <Routes>
+          <Route path="/select-role" element={<RoleSelectionPage />} />
+          <Route path="/" element={<p>홈 화면</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: '프리랜서 선택' }));
+    fireEvent.click(screen.getByRole('button', { name: '선택 완료' }));
+
+    expect(await screen.findByText('홈 화면')).toBeInTheDocument();
+    expect(api.selectRole).toHaveBeenCalledWith('FREELANCER');
+    expect(useAuthStore.getState().accessToken).toBe('new-access-token');
+    expect(useAuthStore.getState().user?.role).toBe('FREELANCER');
   });
 });

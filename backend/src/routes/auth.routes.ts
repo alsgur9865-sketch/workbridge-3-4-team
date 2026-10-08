@@ -3,8 +3,10 @@ import {
   loginController,
   logoutController,
   refreshController,
+  selectRoleController,
   signupController,
 } from '@/controllers/auth.controller';
+import { requireAuth } from '@/middlewares/auth.middleware';
 
 export const authRouter = Router();
 
@@ -43,6 +45,30 @@ authRouter.post('/signup', signupController);
  *       401: { description: Invalid credentials }
  */
 authRouter.post('/login', loginController);
+
+/**
+ * @openapi
+ * /auth/role:
+ *   patch:
+ *     summary: Select the role for a newly registered user
+ *     tags: [Auth]
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [role]
+ *             properties:
+ *               role: { type: string, enum: [CLIENT, FREELANCER] }
+ *     responses:
+ *       200: { description: Role selected and session tokens reissued }
+ *       400: { description: Invalid role }
+ *       401: { description: Not authenticated }
+ *       409: { description: Role already selected }
+ */
+authRouter.patch('/role', requireAuth, selectRoleController);
 
 /**
  * @openapi

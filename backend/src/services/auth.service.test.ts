@@ -2,6 +2,7 @@ const repositoryMock = vi.hoisted(() => ({
   findUserByEmail: vi.fn(),
   findUserById: vi.fn(),
   createLocalUser: vi.fn(),
+  selectUserRole: vi.fn(),
   updateRefreshTokenHash: vi.fn(),
   clearRefreshTokenHash: vi.fn(),
 }));
@@ -22,7 +23,7 @@ vi.mock('@/repositories/auth.repository', () => repositoryMock);
 vi.mock('@/utils/password', () => passwordMock);
 vi.mock('@/utils/token', () => tokenMock);
 
-import { login, logout, refreshSession } from '@/services/auth.service';
+import { login, logout, refreshSession, selectRole } from '@/services/auth.service';
 
 const user = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -78,6 +79,30 @@ describe('auth service sessions', () => {
     await expect(login({ email: user.email, password: 'wrong' })).rejects.toMatchObject({
       statusCode: 401,
       code: 'INVALID_CREDENTIALS',
+    });
+  });
+
+  it('selects a role once and returns tokens containing the new role', async () => {
+    const selectedUser = { ...user, role: 'CLIENT' as const };
+    repositoryMock.selectUserRole.mockResolvedValue(selectedUser);
+
+    const result = await selectRole(user.id, 'CLIENT');
+
+    expect(repositoryMock.selectUserRole).toHaveBeenCalledWith(user.id, 'CLIENT');
+    expect(tokenMock.signAccessToken).toHaveBeenCalledWith({
+      id: user.id,
+      role: 'CLIENT',
+    });
+    expect(result.user.role).toBe('CLIENT');
+  });
+
+  it('does not allow an already selected role to be changed', async () => {
+    repositoryMock.selectUserRole.mockResolvedValue(null);
+    repositoryMock.findUserById.mockResolvedValue(user);
+
+    await expect(selectRole(user.id, 'CLIENT')).rejects.toMatchObject({
+      statusCode: 409,
+      code: 'ROLE_ALREADY_SELECTED',
     });
   });
 

@@ -18,6 +18,8 @@ export interface SignupInput {
   name: string;
 }
 
+export type UserRole = Exclude<AuthUser['role'], null>;
+
 export interface AuthSession {
   accessToken: string;
   user: AuthUser;
@@ -33,6 +35,11 @@ export async function signup(input: SignupInput) {
   return response.data.data.user;
 }
 
+export async function selectRole(role: UserRole) {
+  const response = await apiClient.patch<ApiResponse<AuthSession>>('/auth/role', { role });
+  return response.data.data;
+}
+
 export async function logout() {
   await apiClient.post('/auth/logout');
 }
@@ -40,6 +47,7 @@ export async function logout() {
 const authErrorMessages: Record<string, string> = {
   INVALID_CREDENTIALS: '이메일 또는 비밀번호가 올바르지 않습니다.',
   EMAIL_ALREADY_IN_USE: '이미 가입된 이메일입니다.',
+  ROLE_ALREADY_SELECTED: '이미 역할이 선택된 계정입니다.',
   VALIDATION_ERROR: '입력한 내용을 다시 확인해 주세요.',
   AUTH_NOT_CONFIGURED: '로그인 서버 설정이 완료되지 않았습니다.',
 };

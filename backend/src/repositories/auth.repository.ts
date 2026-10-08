@@ -1,4 +1,5 @@
 import { getPrisma } from '@/lib/prisma';
+import type { UserRole } from '@/types/auth';
 
 interface CreateLocalUserInput {
   email: string;
@@ -28,6 +29,30 @@ export function createLocalUser(input: CreateLocalUserInput) {
       role: true,
       createdAt: true,
     },
+  });
+}
+
+export async function selectUserRole(userId: string, role: UserRole) {
+  const prisma = getPrisma();
+
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.user.updateMany({
+      where: {
+        id: userId,
+        role: null,
+      },
+      data: {
+        role,
+      },
+    });
+
+    if (updated.count === 0) {
+      return null;
+    }
+
+    return tx.user.findUnique({
+      where: { id: userId },
+    });
   });
 }
 

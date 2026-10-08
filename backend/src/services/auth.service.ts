@@ -4,9 +4,11 @@ import {
   createLocalUser,
   findUserByEmail,
   findUserById,
+  selectUserRole,
   updateRefreshTokenHash,
 } from '@/repositories/auth.repository';
 import type { LoginInput, SignupInput } from '@/schemas/auth.schema';
+import type { UserRole } from '@/types/auth';
 import { hashPassword, verifyPassword } from '@/utils/password';
 import {
   hashRefreshToken,
@@ -84,6 +86,22 @@ export async function login(input: LoginInput) {
 
   if (!user?.passwordHash || !(await verifyPassword(input.password, user.passwordHash))) {
     throw new AppError(401, 'INVALID_CREDENTIALS', 'Email or password is incorrect.');
+  }
+
+  return createSession(user);
+}
+
+export async function selectRole(userId: string, role: UserRole) {
+  const user = await selectUserRole(userId, role);
+
+  if (!user) {
+    const existingUser = await findUserById(userId);
+
+    if (!existingUser) {
+      throw new AppError(404, 'USER_NOT_FOUND', 'The user does not exist.');
+    }
+
+    throw new AppError(409, 'ROLE_ALREADY_SELECTED', 'The user role has already been selected.');
   }
 
   return createSession(user);

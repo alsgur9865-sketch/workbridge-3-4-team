@@ -1,9 +1,17 @@
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { AppError } from '@/errors/AppError';
+
+const TEST_SECRET = vi.hoisted(() => {
+  const secret = 'test-access-secret-that-is-at-least-32-characters';
+  process.env.JWT_ACCESS_SECRET = secret;
+  return secret;
+});
 
 const authServiceMock = vi.hoisted(() => ({
   signup: vi.fn(),
   login: vi.fn(),
+  selectRole: vi.fn(),
   refreshSession: vi.fn(),
   logout: vi.fn(),
 }));
@@ -18,6 +26,10 @@ const testUser = {
   name: 'Min',
   role: null,
 };
+
+function accessToken() {
+  return jwt.sign({ sub: testUser.id, role: null }, TEST_SECRET, { expiresIn: '5m' });
+}
 
 describe('auth routes', () => {
   beforeEach(() => {
@@ -89,6 +101,37 @@ describe('auth routes', () => {
     });
     expect(response.headers['set-cookie']?.[0]).toContain('workbridge_refresh_token=refresh-token');
     expect(response.headers['set-cookie']?.[0]).toContain('HttpOnly');
+  });
+
+  it('selects a role and reissues the session', async () => {
+    authServiceMock.selectRole.mockResolvedValue({
+      user: { ...testUser, role: 'CLIENT' },
+      accessToken: 'role-access-token',
+      refreshToken: 'role-refresh-token',
+    });
+
+    const response = await request(app)
+      .patch('/api/v1/auth/role')
+      .set('Authorization', `Bearer ${accessToken()}`)
+      .send({ role: 'CLIENT' });
+
+    expect(response.status).toBe(200);
+    expect(authServiceMock.selectRole).toHaveBeenCalledWith(testUser.id, 'CLIENT');
+    expect(response.body.data.user.role).toBe('CLIENT');
+    expect(response.body.data.accessToken).toBe('role-access-token');
+    expect(response.headers['set-cookie']?.[0]).toContain(
+      'workbridge_refresh_token=role-refresh-token',
+    );
+  });
+
+  it('rejects an invalid role', async () => {
+    const response = await request(app)
+      .patch('/api/v1/auth/role')
+      .set('Authorization', `Bearer ${accessToken()}`)
+      .send({ role: 'ADMIN' });
+
+    expect(response.status).toBe(400);
+    expect(authServiceMock.selectRole).not.toHaveBeenCalled();
   });
 
   it('refreshes a session from the cookie', async () => {

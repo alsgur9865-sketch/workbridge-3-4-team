@@ -45,7 +45,7 @@ export function LoginPage() {
   });
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={user.role ? '/' : '/select-role'} replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -54,7 +54,7 @@ export function LoginPage() {
     try {
       const session = await login(values);
       setSession(session.accessToken, session.user);
-      navigate('/', { replace: true });
+      navigate(session.user.role ? '/' : '/select-role', { replace: true });
     } catch (error) {
       setSubmitError(getAuthErrorMessage(error));
     }

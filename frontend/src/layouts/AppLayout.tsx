@@ -1,6 +1,6 @@
 import { BriefcaseBusiness, ChevronRight, LogOut } from 'lucide-react';
 import { useState } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '@/features/auth/api';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -11,10 +11,15 @@ const navigation = [
 ];
 
 export function AppLayout() {
+  const location = useLocation();
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.clearSession);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  if (user && user.role === null && location.pathname !== '/select-role') {
+    return <Navigate to="/select-role" replace />;
+  }
 
   async function handleLogout() {
     setIsLoggingOut(true);

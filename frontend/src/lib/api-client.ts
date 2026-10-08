@@ -57,7 +57,9 @@ function getRefreshPromise() {
 }
 
 function shouldSkipAutomaticRefresh(url?: string) {
-  return Boolean(url?.startsWith('/auth/'));
+  return ['/auth/login', '/auth/signup', '/auth/refresh', '/auth/logout'].some((path) =>
+    url?.startsWith(path),
+  );
 }
 
 export function restoreSession() {
