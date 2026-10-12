@@ -3,6 +3,21 @@ import { AppError } from '@/errors/AppError';
 import { type UserRole } from '@/types/auth';
 import { verifyAccessToken } from '@/utils/token';
 
+export const optionalAuth: RequestHandler = (request, _response, next) => {
+  const authorization = request.headers.authorization;
+  if (!authorization) {
+    next();
+    return;
+  }
+
+  if (!authorization.startsWith('Bearer ')) {
+    throw new AppError(401, 'UNAUTHORIZED', 'Authentication is required.');
+  }
+
+  request.user = verifyAccessToken(authorization.slice('Bearer '.length));
+  next();
+};
+
 export const requireAuth: RequestHandler = (request, _response, next) => {
   const authorization = request.headers.authorization;
   if (!authorization?.startsWith('Bearer ')) {
