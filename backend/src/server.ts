@@ -4,7 +4,7 @@ import { env } from '@/config/env';
 import { disconnectPrisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
 
-const server = app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, '0.0.0.0', () => {
   logger.info({ port: env.PORT }, 'WorkBridge API started');
 });
 
