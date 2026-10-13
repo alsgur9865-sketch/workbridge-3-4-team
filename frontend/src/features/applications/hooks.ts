@@ -1,12 +1,42 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as applicationApi from '@/features/applications/api';
-import type { ApplicationDecision, CreateApplicationInput } from '@/features/applications/types';
+import type {
+  ApplicationDecision,
+  CreateApplicationInput,
+  PriceOfferDecision,
+} from '@/features/applications/types';
 
 export const applicationKeys = {
   all: ['applications'] as const,
   byProject: (projectId: string) => ['applications', 'project', projectId] as const,
   mine: () => ['applications', 'me'] as const,
+  detail: (applicationId: string) => ['applications', 'detail', applicationId] as const,
 };
+
+export function useApplication(applicationId: string, enabled = true) {
+  return useQuery({
+    queryKey: applicationKeys.detail(applicationId),
+    queryFn: () => applicationApi.getApplication(applicationId),
+    enabled,
+  });
+}
+
+export function useOfferPrice(applicationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (amount: number) => applicationApi.offerPrice(applicationId, amount),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: applicationKeys.all }),
+  });
+}
+
+export function useRespondToPriceOffer(applicationId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (status: PriceOfferDecision) =>
+      applicationApi.respondToPriceOffer(applicationId, status),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: applicationKeys.all }),
+  });
+}
 
 export function useProjectApplications(projectId: string, enabled = true) {
   return useQuery({

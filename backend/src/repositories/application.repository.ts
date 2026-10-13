@@ -131,6 +131,25 @@ export function findApplicationWithProject(applicationId: string) {
   });
 }
 
+export function findApplicationDetail(applicationId: string) {
+  return getPrisma().application.findUnique({
+    where: { id: applicationId },
+    include: {
+      freelancer: { select: freelancerSummarySelect },
+      project: {
+        select: {
+          ...projectSummarySelect,
+          clientId: true,
+          workStartAt: true,
+          workEndAt: true,
+          selectedApplicationId: true,
+          deletedAt: true,
+        },
+      },
+    },
+  });
+}
+
 /**
  * Accepts one application and closes recruitment in a single transaction:
  * the project records the selected application, moves to PRICE_AGREEMENT,

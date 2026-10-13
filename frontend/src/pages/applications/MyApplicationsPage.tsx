@@ -4,7 +4,15 @@ import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { ApplicationStatusBadge } from '@/features/applications/components/ApplicationStatusBadge';
 import { formatDate, formatWon, getApplicationErrorMessage } from '@/features/applications/format';
 import { useMyApplications } from '@/features/applications/hooks';
+import type { PriceOfferStatus } from '@/features/applications/types';
 import { useAuthStore } from '@/stores/auth.store';
+
+const priceOfferMessages: Record<PriceOfferStatus, string> = {
+  NONE: '선정되었습니다! 의뢰인의 최종 금액 제안을 기다리고 있습니다.',
+  PENDING: '의뢰인이 최종 금액을 제안했습니다. 확인 후 응답해 주세요.',
+  ACCEPTED: '최종 금액이 확정되었습니다. 계약 단계로 넘어갑니다.',
+  REJECTED: '제안을 거절했습니다. 의뢰인의 새로운 제안을 기다리고 있습니다.',
+};
 
 export function MyApplicationsPage() {
   const location = useLocation();
@@ -95,9 +103,17 @@ export function MyApplicationsPage() {
               </dl>
 
               {application.status === 'ACCEPTED' ? (
-                <p className="mt-5 rounded-xl bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-700">
-                  선정되었습니다! 의뢰인과 최종 금액 협의를 진행해 주세요.
-                </p>
+                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-brand-50 px-4 py-3">
+                  <p className="text-sm font-semibold text-brand-700">
+                    {priceOfferMessages[application.priceOfferStatus]}
+                  </p>
+                  <Link
+                    className="inline-flex h-9 items-center justify-center rounded-md bg-brand-600 px-3 text-sm font-medium text-white hover:bg-brand-700"
+                    to={`/applications/${application.id}/price`}
+                  >
+                    금액 협의 보기
+                  </Link>
+                </div>
               ) : null}
             </li>
           ))}

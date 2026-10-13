@@ -1,5 +1,7 @@
 export type ApplicationStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED';
 export type ApplicationDecision = Exclude<ApplicationStatus, 'PENDING'>;
+export type PriceOfferStatus = 'NONE' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
+export type PriceOfferDecision = 'ACCEPTED' | 'REJECTED';
 
 export interface Application {
   id: string;
@@ -10,7 +12,7 @@ export interface Application {
   estimatedDays: number;
   status: ApplicationStatus;
   clientOfferAmount: number | null;
-  priceOfferStatus: 'NONE' | 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  priceOfferStatus: PriceOfferStatus;
   offeredAt: string | null;
   respondedAt: string | null;
   createdAt: string;
@@ -34,6 +36,20 @@ export interface MyApplication extends Application {
     budget: number;
     recruitmentStatus: 'SCHEDULED' | 'OPEN' | 'CLOSED';
     transactionStatus: string;
+  };
+}
+
+export interface ApplicationDetail extends ProjectApplication {
+  project: {
+    id: string;
+    title: string;
+    budget: number;
+    clientId: string;
+    recruitmentStatus: 'SCHEDULED' | 'OPEN' | 'CLOSED';
+    transactionStatus: string;
+    workStartAt: string;
+    workEndAt: string;
+    isSelected: boolean;
   };
 }
 

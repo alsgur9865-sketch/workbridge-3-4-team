@@ -111,6 +111,28 @@ applicationRouter.get(
 
 /**
  * @openapi
+ * /applications/{applicationId}:
+ *   get:
+ *     summary: Get one application with project and freelancer summaries
+ *     description: Visible to the project owner and the applicant only.
+ *     tags: [Applications]
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - { in: path, name: applicationId, required: true, schema: { type: string, format: uuid } }
+ *     responses:
+ *       200: { description: Application detail }
+ *       401: { description: Not authenticated }
+ *       403: { description: Neither the project owner nor the applicant }
+ *       404: { description: Application not found }
+ */
+applicationRouter.get(
+  '/applications/:applicationId',
+  requireAuth,
+  applicationController.getApplication,
+);
+
+/**
+ * @openapi
  * /applications/{applicationId}/status:
  *   patch:
  *     summary: Accept or reject an application (project owner CLIENT)
