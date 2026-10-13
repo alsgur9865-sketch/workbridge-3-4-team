@@ -62,9 +62,12 @@ export function AppLayout() {
           <div className="flex items-center gap-2 sm:gap-3">
             {user ? (
               <>
-                <span className="hidden max-w-40 truncate text-sm font-semibold text-slate-700 sm:inline">
+                <Link
+                  className="hidden max-w-40 truncate text-sm font-semibold text-slate-700 hover:text-brand-700 sm:inline"
+                  to="/profile"
+                >
                   {user.name ?? user.email}
-                </span>
+                </Link>
                 <button
                   type="button"
                   className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
@@ -135,6 +138,11 @@ export function AppLayout() {
                 <Link className="hover:text-white" to="/signup">
                   회원가입
                 </Link>
+                {user ? (
+                  <Link className="hover:text-white" to="/profile">
+                    내 프로필
+                  </Link>
+                ) : null}
                 {user?.role === 'CLIENT' && (
                   <Link className="hover:text-white" to="/projects/new">
                     프로젝트 등록
