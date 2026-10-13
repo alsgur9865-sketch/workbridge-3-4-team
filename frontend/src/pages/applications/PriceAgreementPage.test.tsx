@@ -57,6 +57,7 @@ function detail(
       workEndAt: '2026-12-01T00:00:00.000Z',
       isSelected: true,
     },
+    contract: null,
   };
 }
 
@@ -157,5 +158,31 @@ describe('PriceAgreementPage', () => {
 
     expect(await screen.findByText(/최종 금액이 확정되었습니다/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /이 금액으로 확정/ })).not.toBeInTheDocument();
+    expect(screen.getByText('의뢰인이 계약서를 준비하고 있습니다.')).toBeInTheDocument();
+  });
+
+  it('leads the client to write the contract once the price is agreed', async () => {
+    signInAs(clientId, 'CLIENT');
+    api.getApplication.mockResolvedValue(detail('ACCEPTED', 4_500_000));
+    renderPage();
+
+    expect(await screen.findByRole('link', { name: /계약서 작성하기/ })).toHaveAttribute(
+      'href',
+      `/applications/${applicationId}/contract/new`,
+    );
+  });
+
+  it('links both sides to an existing contract', async () => {
+    signInAs(freelancerId, 'FREELANCER');
+    api.getApplication.mockResolvedValue({
+      ...detail('ACCEPTED', 4_500_000),
+      contract: { id: 'contract-1', status: 'DRAFT' },
+    });
+    renderPage();
+
+    expect(await screen.findByRole('link', { name: /계약서 보기/ })).toHaveAttribute(
+      'href',
+      '/contracts/contract-1',
+    );
   });
 });

@@ -34,6 +34,14 @@ const errorMessages: Record<string, string> = {
   PRICE_ALREADY_AGREED: '이미 금액이 확정되었습니다.',
   PRICE_OFFER_NOT_AVAILABLE: '지금은 금액을 제안할 수 없습니다.',
   NO_PENDING_PRICE_OFFER: '응답할 금액 제안이 없습니다.',
+  CONTRACT_NOT_FOUND: '계약서를 찾을 수 없습니다.',
+  NOT_CONTRACT_PARTY: '계약 당사자만 볼 수 있는 계약서입니다.',
+  CONTRACT_ALREADY_EXISTS: '이미 계약서가 작성되었습니다.',
+  PRICE_NOT_AGREED: '금액이 확정된 뒤에 계약서를 작성할 수 있습니다.',
+  CONTRACT_STAGE_CLOSED: '지금은 계약서를 작성할 수 있는 단계가 아닙니다.',
+  INVALID_CONTRACT_PERIOD: '계약 종료일은 시작일보다 뒤여야 합니다.',
+  ALREADY_SIGNED: '이미 서명한 계약서입니다.',
+  CONTRACT_NOT_SIGNABLE: '더 이상 서명할 수 없는 계약서입니다.',
   VALIDATION_ERROR: '입력값을 다시 확인해 주세요.',
 };
 

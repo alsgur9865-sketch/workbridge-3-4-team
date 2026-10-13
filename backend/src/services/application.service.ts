@@ -149,6 +149,7 @@ export async function getApplicationDetail(user: AuthUser, applicationId: string
       workEndAt: project.workEndAt,
       isSelected: project.selectedApplicationId === application.id,
     },
+    contract: application.contract,
   };
 }
 
