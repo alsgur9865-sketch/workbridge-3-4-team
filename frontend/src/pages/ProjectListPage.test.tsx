@@ -1,11 +1,15 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ProjectListPage } from '@/pages/ProjectListPage';
+import { useAuthStore } from '@/stores/auth.store';
+
+const recommended = vi.hoisted(() => vi.fn());
 
 vi.mock('@/features/projects/projects.api', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/features/projects/projects.api')>();
   return {
     ...original,
+    useRecommendedProjects: recommended,
     useToggleBookmark: () => ({ isPending: false, mutate: vi.fn() }),
     useProjects: () => ({
       data: {
@@ -40,6 +44,14 @@ vi.mock('@/features/projects/projects.api', async (importOriginal) => {
 });
 
 describe('ProjectListPage', () => {
+  beforeEach(() => {
+    useAuthStore.setState({ user: null, accessToken: null, isInitialized: true });
+    recommended.mockReturnValue({
+      data: { data: [], meta: { profileRequired: true } },
+      isPending: false,
+      isError: false,
+    });
+  });
   it('shows searchable project results', () => {
     render(
       <MemoryRouter>
@@ -51,5 +63,62 @@ describe('ProjectListPage', () => {
     expect(screen.getByText('관리자 대시보드 개발')).toBeInTheDocument();
     expect(screen.getByText('프로젝트 1개')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '북마크 추가' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '프로젝트 등록하기' })).not.toBeInTheDocument();
+  });
+
+  it('only shows project creation for clients', () => {
+    useAuthStore.setState({
+      user: { id: 'client-1', email: 'client@example.com', name: 'Client', role: 'CLIENT' },
+    });
+    render(
+      <MemoryRouter>
+        <ProjectListPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('link', { name: '프로젝트 등록하기' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: '나를 위한 추천 프로젝트' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('guides freelancers without a profile and includes closed projects when viewing bookmarks', () => {
+    useAuthStore.setState({
+      user: {
+        id: 'freelancer-1',
+        email: 'freelancer@example.com',
+        name: 'Freelancer',
+        role: 'FREELANCER',
+      },
+    });
+    render(
+      <MemoryRouter>
+        <ProjectListPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('heading', { name: '나를 위한 추천 프로젝트' })).toBeInTheDocument();
+    expect(screen.getByText(/프로필에 주 분야나 기술스택을 등록하면/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '프로젝트 등록하기' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '북마크만 보기' }));
+    expect(screen.getByRole('heading', { name: '내 북마크' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '모집 상태 선택' })).toHaveValue('');
+  });
+
+  it('explains recommendation failures instead of hiding them', () => {
+    useAuthStore.setState({
+      user: {
+        id: 'freelancer-1',
+        email: 'freelancer@example.com',
+        name: 'Freelancer',
+        role: 'FREELANCER',
+      },
+    });
+    recommended.mockReturnValue({ isPending: false, isError: true, refetch: vi.fn() });
+    render(
+      <MemoryRouter>
+        <ProjectListPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('추천 프로젝트를 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '추천 다시 불러오기' })).toBeInTheDocument();
   });
 });

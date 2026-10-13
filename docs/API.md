@@ -15,6 +15,7 @@ Base URL: `/api/v1`
   - Filters: `search`, `category`, `status`, `skill`, `minBudget`, `maxBudget`
   - Options: `sort`, `bookmarkedOnly`, `page`, `limit`
 - `GET /projects/:projectId`
+- `GET /projects/recommended` (authenticated `FREELANCER` only)
 - `POST /projects`
 - `PATCH /projects/:projectId`
 - `DELETE /projects/:projectId`
@@ -42,6 +43,20 @@ Base URL: `/api/v1`
 - Project creation, updates, deletions, and AI price estimates require an authenticated `CLIENT`.
 - Bookmark creation and removal require an authenticated user.
 - AI price estimates return `AI_NOT_CONFIGURED` until `OPENAI_API_KEY` is configured; `OPENAI_MODEL` is optional.
+
+## Project recommendations and recruitment
+
+- `GET /projects/recommended` reads `FreelancerProfile.mainCategory` and related skill names for the authenticated user. It returns at most 12 projects in `{ success, data, meta: { profileRequired } }`.
+- Score: two points per matching skill name, plus one point for the matching category (case-insensitive). Ties are ordered by newest creation time, then project ID. Non-matching projects are excluded.
+- Each recommended project includes `recommendation: { score, matchedSkills, categoryMatched }` and the current user's `isBookmarked` value.
+- If both category and skills are missing, the API returns an empty list and `profileRequired: true`. Profile editing remains owned by the profiles feature.
+- Use the same category values as project creation (`Web Development`, `Design`) when saving a freelancer's main category.
+- Read-time recruitment status is `SCHEDULED` before the start, `OPEN` from the start (inclusive) until the deadline (exclusive), and `CLOSED` at/after the deadline. A null start means immediate recruitment.
+- Deleted projects, explicitly closed projects (`closedAt`), selected projects, and projects whose transaction status is not `NONE` remain closed even if the dates are edited.
+- Lists apply these rules before counting and pagination; recommendations and application submission use the same rules. Reads do not write status changes back to the database.
+- Project detail adds `myApplication: { id, status } | null` for the authenticated viewer only; guests receive null.
+- The frontend refreshes project reads every 30 seconds and after bookmark/application changes. Project query caches are separated by user ID.
+- `/projects?bookmarkedOnly=true` opens the saved-project view, initially including all recruitment states.
 
 ## Planned groups
 

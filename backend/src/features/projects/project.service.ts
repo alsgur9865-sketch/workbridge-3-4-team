@@ -1,6 +1,7 @@
 import type { Prisma } from '@/generated/prisma/client';
 import { AppError } from '@/errors/AppError';
 import { getPrisma } from '@/lib/prisma';
+import { getRecruitmentStatus, recruitmentWhere } from './recruitment-status';
 import type {
   CreateProjectInput,
   ProjectListQuery,
@@ -22,7 +23,7 @@ const projectInclude = {
 
 type ProjectRecord = Prisma.ProjectGetPayload<{ include: typeof projectInclude }>;
 
-function serializeProject(project: ProjectRecord, isBookmarked = false) {
+function serializeProject(project: ProjectRecord, isBookmarked = false, now = new Date()) {
   return {
     id: project.id,
     clientId: project.clientId,
@@ -34,7 +35,7 @@ function serializeProject(project: ProjectRecord, isBookmarked = false) {
     workEndAt: project.workEndAt.toISOString(),
     recruitmentStartAt: project.recruitmentStartAt?.toISOString() ?? null,
     recruitmentDeadline: project.recruitmentDeadline.toISOString(),
-    recruitmentStatus: project.recruitmentStatus,
+    recruitmentStatus: getRecruitmentStatus(project, now),
     transactionStatus: project.transactionStatus,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
@@ -73,17 +74,6 @@ async function resolveSkills(skills: string[]) {
   );
 }
 
-function recruitmentStatus(recruitmentStartAt: Date | null, recruitmentDeadline: Date) {
-  const now = new Date();
-  if (recruitmentDeadline < now) {
-    return 'CLOSED' as const;
-  }
-  if (recruitmentStartAt && recruitmentStartAt > now) {
-    return 'SCHEDULED' as const;
-  }
-  return 'OPEN' as const;
-}
-
 function assertDateOrder(values: {
   workStartAt: Date;
   workEndAt: Date;
@@ -118,6 +108,7 @@ function projectOrderBy(sort: ProjectListQuery['sort']): Prisma.ProjectOrderByWi
 
 export async function listProjects(query: ProjectListQuery, viewerUserId?: string) {
   const prisma = getPrisma();
+  const now = new Date();
   if (query.bookmarkedOnly && !viewerUserId) {
     throw new AppError(401, 'AUTH_REQUIRED', '북마크한 프로젝트를 보려면 로그인이 필요합니다.');
   }
@@ -125,7 +116,7 @@ export async function listProjects(query: ProjectListQuery, viewerUserId?: strin
   const where: Prisma.ProjectWhereInput = {
     deletedAt: null,
     ...(query.category ? { category: query.category } : {}),
-    ...(query.status ? { recruitmentStatus: query.status } : {}),
+    ...(query.status ? { AND: [recruitmentWhere(query.status, now)] } : {}),
     ...(query.skill
       ? { skills: { some: { skill: { name: { contains: query.skill, mode: 'insensitive' } } } } }
       : {}),
@@ -177,7 +168,7 @@ export async function listProjects(query: ProjectListQuery, viewerUserId?: strin
 
   return {
     data: projects.map((project) =>
-      serializeProject(project, bookmarkedProjectIds.has(project.id)),
+      serializeProject(project, bookmarkedProjectIds.has(project.id), now),
     ),
     meta: {
       page: query.page,
@@ -206,7 +197,79 @@ export async function getProject(projectId: string, viewerUserId?: string) {
       })
     : null;
 
-  return serializeProject(project, Boolean(bookmark));
+  const application = viewerUserId
+    ? await prisma.application.findUnique({
+        where: { projectId_freelancerId: { projectId, freelancerId: viewerUserId } },
+        select: { id: true, status: true },
+      })
+    : null;
+
+  return { ...serializeProject(project, Boolean(bookmark)), myApplication: application };
+}
+
+export async function recommendProjects(freelancerId: string) {
+  const prisma = getPrisma();
+  const profile = await prisma.freelancerProfile.findUnique({
+    where: { userId: freelancerId },
+    include: { skills: { include: { skill: { select: { name: true } } } } },
+  });
+  const category = profile?.mainCategory.trim() ?? '';
+  const skills = uniqueSkillNames(profile?.skills.map(({ skill }) => skill.name) ?? []);
+  if (!category && skills.length === 0) {
+    return { data: [], meta: { profileRequired: true } };
+  }
+
+  const now = new Date();
+  const normalizedSkills = new Set(skills.map((skill) => skill.toLowerCase()));
+  const projects = await prisma.project.findMany({
+    where: {
+      AND: [recruitmentWhere('OPEN', now)],
+      clientId: { not: freelancerId },
+      OR: [
+        ...(category ? [{ category: { equals: category, mode: 'insensitive' as const } }] : []),
+        ...skills.map((name) => ({
+          skills: { some: { skill: { name: { equals: name, mode: 'insensitive' as const } } } },
+        })),
+      ],
+    },
+    include: projectInclude,
+  });
+  const ranked = projects
+    .map((project) => {
+      const matchedSkills = uniqueSkillNames(project.skills.map(({ skill }) => skill.name)).filter(
+        (skill) => normalizedSkills.has(skill.toLowerCase()),
+      );
+      const categoryMatched =
+        Boolean(category) && project.category.trim().toLowerCase() === category.toLowerCase();
+      return {
+        project,
+        recommendation: {
+          matchedSkills,
+          categoryMatched,
+          score: matchedSkills.length * 2 + Number(categoryMatched),
+        },
+      };
+    })
+    .filter(({ recommendation }) => recommendation.score > 0)
+    .sort(
+      (left, right) =>
+        right.recommendation.score - left.recommendation.score ||
+        right.project.createdAt.getTime() - left.project.createdAt.getTime() ||
+        left.project.id.localeCompare(right.project.id),
+    )
+    .slice(0, 12);
+  const bookmarks = await prisma.bookmark.findMany({
+    where: { userId: freelancerId, projectId: { in: ranked.map(({ project }) => project.id) } },
+    select: { projectId: true },
+  });
+  const bookmarkedIds = new Set(bookmarks.map(({ projectId }) => projectId));
+  return {
+    data: ranked.map(({ project, recommendation }) => ({
+      ...serializeProject(project, bookmarkedIds.has(project.id), now),
+      recommendation,
+    })),
+    meta: { profileRequired: false },
+  };
 }
 
 export async function addProjectBookmark(projectId: string, userId: string) {
@@ -247,7 +310,7 @@ export async function createProject(clientId: string, input: CreateProjectInput)
       workEndAt: new Date(input.workEndAt),
       recruitmentStartAt,
       recruitmentDeadline,
-      recruitmentStatus: recruitmentStatus(recruitmentStartAt, recruitmentDeadline),
+      recruitmentStatus: getRecruitmentStatus({ recruitmentStartAt, recruitmentDeadline }),
       skills: {
         create: skillRecords.map(({ id }) => ({ skillId: id })),
       },
@@ -299,7 +362,7 @@ export async function updateProject(
       workEndAt: input.workEndAt ? dates.workEndAt : undefined,
       recruitmentStartAt: input.recruitmentStartAt ? dates.recruitmentStartAt : undefined,
       recruitmentDeadline: input.recruitmentDeadline ? dates.recruitmentDeadline : undefined,
-      recruitmentStatus: recruitmentStatus(dates.recruitmentStartAt, dates.recruitmentDeadline),
+      recruitmentStatus: getRecruitmentStatus({ ...existing, ...dates }),
       ...(skillRecords
         ? {
             skills: {

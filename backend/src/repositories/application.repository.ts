@@ -17,6 +17,10 @@ const projectSummarySelect = {
   title: true,
   budget: true,
   recruitmentStatus: true,
+  recruitmentStartAt: true,
+  recruitmentDeadline: true,
+  closedAt: true,
+  selectedApplicationId: true,
   transactionStatus: true,
 } as const;
 
@@ -28,6 +32,8 @@ export function findProjectForApplication(projectId: string) {
       clientId: true,
       title: true,
       recruitmentStatus: true,
+      recruitmentStartAt: true,
+      closedAt: true,
       recruitmentDeadline: true,
       transactionStatus: true,
       selectedApplicationId: true,

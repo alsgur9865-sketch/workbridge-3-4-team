@@ -1,12 +1,13 @@
-import { ArrowLeft, Bookmark, BriefcaseBusiness, CalendarDays, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, BriefcaseBusiness, CalendarDays, Pencil, Trash2 } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import {
   getProjectErrorMessage,
   useDeleteProject,
   useProject,
-  useToggleBookmark,
 } from '@/features/projects/projects.api';
+import { BookmarkButton } from '@/features/projects/BookmarkButton';
+import { applicationStatusLabels } from '@/features/applications/format';
 import { useAuthStore } from '@/stores/auth.store';
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR');
@@ -17,7 +18,6 @@ export function ProjectDetailPage() {
   const navigate = useNavigate();
   const projectQuery = useProject(projectId);
   const deleteMutation = useDeleteProject();
-  const bookmarkMutation = useToggleBookmark(projectId, projectQuery.data?.isBookmarked ?? false);
   const user = useAuthStore((state) => state.user);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -139,22 +139,53 @@ export function ProjectDetailPage() {
               </div>
             </div>
 
-            <button
-              className={`mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border text-sm font-black transition disabled:opacity-50 ${
-                project.isBookmarked
-                  ? 'border-brand-600 bg-brand-50 text-brand-700'
-                  : 'border-slate-300 text-slate-700 hover:border-brand-300 hover:text-brand-700'
-              }`}
-              disabled={bookmarkMutation.isPending}
-              onClick={() => bookmarkMutation.mutate()}
-              type="button"
-            >
-              <Bookmark
-                className={`size-4 ${project.isBookmarked ? 'fill-brand-600' : ''}`}
-                aria-hidden="true"
-              />
-              {project.isBookmarked ? '북마크 해제' : '북마크 추가'}
-            </button>
+            <div className="mt-6">
+              {!user ? (
+                <Link
+                  className="block rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white"
+                  to="/login"
+                >
+                  로그인하고 참여하기
+                </Link>
+              ) : user.role === 'FREELANCER' ? (
+                project.myApplication ? (
+                  <div className="rounded-xl bg-brand-50 p-4 text-sm text-brand-800" role="status">
+                    <p className="font-bold">
+                      이미 지원한 프로젝트 · {applicationStatusLabels[project.myApplication.status]}
+                    </p>
+                    <Link className="mt-2 inline-block underline" to="/applications/me">
+                      내 지원 현황 보기
+                    </Link>
+                  </div>
+                ) : project.recruitmentStatus === 'OPEN' ? (
+                  <Link
+                    className="block rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white hover:bg-brand-700"
+                    to={`/projects/${project.id}/apply`}
+                  >
+                    지원하기
+                  </Link>
+                ) : (
+                  <button
+                    className="w-full rounded-xl bg-slate-100 px-4 py-3 text-sm font-bold text-slate-500"
+                    disabled
+                    type="button"
+                  >
+                    {project.recruitmentStatus === 'SCHEDULED'
+                      ? '모집 시작 전입니다'
+                      : '모집이 마감되었습니다'}
+                  </button>
+                )
+              ) : null}
+              {canManageProject && (
+                <Link
+                  className="block rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white hover:bg-brand-700"
+                  to={`/projects/${project.id}/applications`}
+                >
+                  지원자 보기
+                </Link>
+              )}
+            </div>
+            <BookmarkButton projectId={project.id} isBookmarked={project.isBookmarked} />
 
             {canManageProject ? (
               <div className="mt-7 grid gap-2 border-t border-slate-100 pt-5">

@@ -5,7 +5,7 @@ import { logout } from '@/features/auth/api';
 import { useAuthStore } from '@/stores/auth.store';
 
 const navigation = [
-  { label: '프로젝트 찾기', href: '/#projects' },
+  { label: '프로젝트 찾기', href: '/projects' },
   { label: '이용 방법', href: '/#how-it-works' },
   { label: 'AI 견적 분석', href: '/#ai-estimate' },
 ];
@@ -52,6 +52,11 @@ export function AppLayout() {
                 {item.label}
               </a>
             ))}
+            {user && (
+              <Link className="hover:text-brand-700" to="/projects?bookmarkedOnly=true">
+                내 북마크
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -130,9 +135,11 @@ export function AppLayout() {
                 <Link className="hover:text-white" to="/signup">
                   회원가입
                 </Link>
-                <Link className="hover:text-white" to="/projects/new">
-                  프로젝트 등록
-                </Link>
+                {user?.role === 'CLIENT' && (
+                  <Link className="hover:text-white" to="/projects/new">
+                    프로젝트 등록
+                  </Link>
+                )}
                 <Link className="inline-flex items-center gap-1 hover:text-white" to="/login">
                   로그인 <ChevronRight className="size-4" aria-hidden="true" />
                 </Link>

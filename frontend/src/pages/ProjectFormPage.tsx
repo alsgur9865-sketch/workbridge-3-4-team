@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
+import { useAuthStore } from '@/stores/auth.store';
 import {
   getProjectErrorMessage,
   type Project,
@@ -17,7 +18,11 @@ const projectFormSchema = z
     title: z.string().trim().min(2, '제목을 2자 이상 입력해 주세요.').max(200),
     description: z.string().trim().min(20, '설명을 20자 이상 입력해 주세요.').max(5000),
     category: z.string().min(1, '카테고리를 선택해 주세요.'),
-    budget: z.number().positive('예산을 입력해 주세요.').max(1_000_000_000),
+    budget: z
+      .number({ error: '예산을 숫자로 입력해 주세요.' })
+      .int('예산은 원 단위 정수로 입력해 주세요.')
+      .positive('예산을 입력해 주세요.')
+      .max(1_000_000_000, '예산은 10억 원 이하로 입력해 주세요.'),
     workStartAt: z.string().min(1, '작업 시작일을 입력해 주세요.'),
     workEndAt: z.string().min(1, '작업 종료일을 입력해 주세요.'),
     recruitmentDeadline: z.string().min(1, '모집 마감일을 입력해 주세요.'),
@@ -116,7 +121,7 @@ function ProjectForm({ project }: { project?: Project }) {
   const errorClassName = 'mt-1 text-xs font-bold text-rose-600';
 
   return (
-    <form className="mt-8 grid gap-6" onSubmit={handleSubmit(onSubmit)}>
+    <form className="mt-8 grid gap-6" noValidate onSubmit={handleSubmit(onSubmit)}>
       <label className="font-bold text-slate-800">
         프로젝트 제목
         <input
@@ -155,7 +160,9 @@ function ProjectForm({ project }: { project?: Project }) {
             <input
               className={`${fieldClassName} pr-12`}
               min="1"
-              step="10000"
+              step="1"
+              aria-invalid={Boolean(errors.budget)}
+              aria-describedby={errors.budget ? 'budget-error' : undefined}
               type="number"
               {...register('budget', { valueAsNumber: true })}
             />
@@ -163,7 +170,11 @@ function ProjectForm({ project }: { project?: Project }) {
               원
             </span>
           </div>
-          {errors.budget ? <p className={errorClassName}>{errors.budget.message}</p> : null}
+          {errors.budget ? (
+            <p className={errorClassName} id="budget-error" role="alert">
+              {errors.budget.message}
+            </p>
+          ) : null}
         </label>
       </div>
 
@@ -232,8 +243,23 @@ function ProjectForm({ project }: { project?: Project }) {
 
 export function ProjectFormPage() {
   const { projectId } = useParams();
-  const projectQuery = useProject(projectId ?? '');
+  const user = useAuthStore((state) => state.user);
+  const projectQuery = useProject(projectId ?? '', user?.role === 'CLIENT');
   const isEditing = Boolean(projectId);
+
+  if (user?.role !== 'CLIENT') {
+    return (
+      <main className="px-5 py-16 text-center">
+        <h1 className="text-2xl font-bold">의뢰인만 프로젝트를 등록할 수 있습니다</h1>
+        <Link
+          className="mt-5 inline-block font-bold text-brand-700 underline"
+          to={user ? '/projects' : '/login'}
+        >
+          {user ? '프로젝트 둘러보기' : '로그인하러 가기'}
+        </Link>
+      </main>
+    );
+  }
 
   if (isEditing && projectQuery.isPending) {
     return (
@@ -250,6 +276,14 @@ export function ProjectFormPage() {
         <Link className="mt-5 inline-flex font-bold text-brand-700" to="/projects">
           프로젝트 목록으로
         </Link>
+      </main>
+    );
+  }
+
+  if (isEditing && projectQuery.data?.clientId !== user.id) {
+    return (
+      <main className="px-5 py-16 text-center">
+        <h1 className="text-2xl font-bold">작성자만 프로젝트를 수정할 수 있습니다</h1>
       </main>
     );
   }
