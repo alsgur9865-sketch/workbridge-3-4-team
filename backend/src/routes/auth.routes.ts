@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import passport from 'passport';
 import {
+  googleCallbackController,
   loginController,
   logoutController,
   refreshController,
@@ -9,6 +11,44 @@ import {
 import { requireAuth } from '@/middlewares/auth.middleware';
 
 export const authRouter = Router();
+
+/**
+ * @openapi
+ * /auth/google:
+ *   get:
+ *     summary: Start Google OAuth sign in
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirect to Google sign in
+ */
+authRouter.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false,
+  }),
+);
+
+/**
+ * @openapi
+ * /auth/google/callback:
+ *   get:
+ *     summary: Handle Google OAuth callback
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Google authentication completed and redirected to frontend
+ *       401:
+ *         description: Google authentication failed
+ */
+authRouter.get(
+  '/google/callback',
+  passport.authenticate('google', {
+    session: false,
+  }),
+  googleCallbackController,
+);
 
 /**
  * @openapi
