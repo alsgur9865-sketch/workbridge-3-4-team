@@ -1,18 +1,26 @@
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ProjectCard } from '@/features/projects/ProjectCard';
 import { type ProjectRecruitmentStatus, useProjects } from '@/features/projects/projects.api';
+import { RecommendedProjects } from '@/features/projects/RecommendedProjects';
+import { useAuthStore } from '@/stores/auth.store';
 
 export function ProjectListPage() {
+  const user = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const bookmarkedOnly = searchParams.get('bookmarkedOnly') === 'true';
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [status, setStatus] = useState<ProjectRecruitmentStatus | ''>('OPEN');
+  const requestedStatus = searchParams.get('status') ?? (bookmarkedOnly ? '' : 'OPEN');
+  const status = (
+    ['', 'SCHEDULED', 'OPEN', 'CLOSED'].includes(requestedStatus) ? requestedStatus : 'OPEN'
+  ) as ProjectRecruitmentStatus | '';
   const [skill, setSkill] = useState('');
   const [minBudget, setMinBudget] = useState('');
   const [maxBudget, setMaxBudget] = useState('');
   const [sort, setSort] = useState<'newest' | 'budgetLow' | 'budgetHigh' | 'deadline'>('newest');
-  const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
   const [page, setPage] = useState(1);
   const projectsQuery = useProjects({
     page,
@@ -24,7 +32,7 @@ export function ProjectListPage() {
     minBudget: minBudget ? Number(minBudget) : undefined,
     maxBudget: maxBudget ? Number(maxBudget) : undefined,
     sort,
-    bookmarkedOnly,
+    bookmarkedOnly: bookmarkedOnly && Boolean(user),
   });
 
   const projects = projectsQuery.data?.data ?? [];
@@ -45,16 +53,28 @@ export function ProjectListPage() {
               예산, 일정, 기술을 비교하고 원하는 프로젝트를 확인하세요.
             </p>
           </div>
-          <Link
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-bold text-white hover:bg-brand-700"
-            to="/projects/new"
-          >
-            프로젝트 등록하기
-          </Link>
+          {user?.role === 'CLIENT' && (
+            <Link
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-bold text-white hover:bg-brand-700"
+              to="/projects/new"
+            >
+              프로젝트 등록하기
+            </Link>
+          )}
         </div>
       </section>
 
       <section className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8">
+        {user?.role === 'FREELANCER' && !bookmarkedOnly && <RecommendedProjects />}
+        {bookmarkedOnly && (
+          <div className="mb-6 rounded-2xl border border-brand-100 bg-brand-50 p-5">
+            <h2 className="text-xl font-black text-slate-900">내 북마크</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              저장한 프로젝트를 한곳에서 확인하세요. 모집이 끝난 프로젝트도 전체 상태에서 볼 수
+              있습니다.
+            </p>
+          </div>
+        )}
         <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_12rem_12rem]">
           <label className="relative block">
             <span className="sr-only">프로젝트 검색</span>
@@ -93,7 +113,9 @@ export function ProjectListPage() {
             <select
               className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
               onChange={(event) => {
-                setStatus(event.target.value as ProjectRecruitmentStatus | '');
+                const nextParams = new URLSearchParams(searchParams);
+                nextParams.set('status', event.target.value);
+                setSearchParams(nextParams);
                 setPage(1);
               }}
               value={status}
@@ -171,12 +193,16 @@ export function ProjectListPage() {
                 : 'border-slate-300 bg-white text-slate-700 hover:border-brand-300'
             }`}
             onClick={() => {
-              setBookmarkedOnly((current) => !current);
+              if (!user) {
+                navigate('/login');
+                return;
+              }
+              setSearchParams(bookmarkedOnly ? {} : { bookmarkedOnly: 'true' });
               setPage(1);
             }}
             type="button"
           >
-            북마크만 보기
+            {bookmarkedOnly ? '전체 프로젝트 보기' : '북마크만 보기'}
           </button>
         </div>
 
@@ -186,7 +212,14 @@ export function ProjectListPage() {
           </p>
         </div>
 
-        {projectsQuery.isPending ? (
+        {bookmarkedOnly && !user ? (
+          <div className="mt-5 rounded-2xl bg-white p-10 text-center">
+            <p className="font-bold">로그인하면 저장한 프로젝트를 볼 수 있습니다.</p>
+            <Link className="mt-3 inline-block font-bold text-brand-700 underline" to="/login">
+              로그인하러 가기
+            </Link>
+          </div>
+        ) : projectsQuery.isPending ? (
           <div className="mt-5 grid gap-5 lg:grid-cols-3" aria-label="프로젝트 불러오는 중">
             {[1, 2, 3].map((item) => (
               <div className="h-80 animate-pulse rounded-2xl bg-slate-200" key={item} />
@@ -212,18 +245,26 @@ export function ProjectListPage() {
         ) : (
           <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
             <Search className="mx-auto size-8 text-slate-400" aria-hidden="true" />
-            <p className="mt-4 font-bold text-slate-800">조건에 맞는 프로젝트가 없습니다.</p>
+            <p className="mt-4 font-bold text-slate-800">
+              {bookmarkedOnly
+                ? '현재 조건에 맞는 북마크가 없습니다.'
+                : '조건에 맞는 프로젝트가 없습니다.'}
+            </p>
+            {bookmarkedOnly && (
+              <p className="mt-2 text-sm text-slate-600">
+                관심 있는 프로젝트의 북마크 버튼을 눌러 저장해 보세요.
+              </p>
+            )}
             <button
               className="mt-3 text-sm font-bold text-brand-700 hover:underline"
               onClick={() => {
                 setSearch('');
                 setCategory('');
-                setStatus('OPEN');
                 setSkill('');
                 setMinBudget('');
                 setMaxBudget('');
                 setSort('newest');
-                setBookmarkedOnly(false);
+                setSearchParams({});
                 setPage(1);
               }}
               type="button"

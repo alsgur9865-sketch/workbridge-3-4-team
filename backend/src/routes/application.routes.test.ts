@@ -38,6 +38,8 @@ function openProject(overrides: Record<string, unknown> = {}) {
     clientId,
     title: '테스트 프로젝트',
     recruitmentStatus: 'OPEN',
+    recruitmentStartAt: null,
+    closedAt: null,
     recruitmentDeadline: new Date(Date.now() + 86_400_000),
     transactionStatus: 'NONE',
     selectedApplicationId: null,
@@ -155,6 +157,36 @@ describe('POST /projects/:projectId/applications', () => {
       .send(validBody);
     expect(response.status).toBe(409);
     expect(response.body.error.code).toBe('ALREADY_APPLIED');
+    expect(repository.createApplication).not.toHaveBeenCalled();
+  });
+
+  it('accepts a scheduled DB record once its start time has passed', async () => {
+    repository.findProjectForApplication.mockResolvedValue(
+      openProject({
+        recruitmentStatus: 'SCHEDULED',
+        recruitmentStartAt: new Date(Date.now() - 1000),
+      }),
+    );
+    repository.findApplicationByProjectAndFreelancer.mockResolvedValue(null);
+    repository.createApplication.mockResolvedValue(applicationRecord());
+    const response = await request(app)
+      .post(url)
+      .set('Authorization', tokenFor(freelancerId, 'FREELANCER'))
+      .send(validBody);
+    expect(response.status).toBe(201);
+  });
+
+  it.each([
+    { recruitmentStartAt: new Date(Date.now() + 60000) },
+    { closedAt: new Date() },
+    { selectedApplicationId: 'selected' },
+  ])('blocks a non-recruiting project even when its DB status is OPEN: %j', async (override) => {
+    repository.findProjectForApplication.mockResolvedValue(openProject(override));
+    const response = await request(app)
+      .post(url)
+      .set('Authorization', tokenFor(freelancerId, 'FREELANCER'))
+      .send(validBody);
+    expect(response.status).toBe(409);
     expect(repository.createApplication).not.toHaveBeenCalled();
   });
 });

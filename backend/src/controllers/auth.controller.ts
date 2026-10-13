@@ -1,5 +1,5 @@
 import type { CookieOptions, RequestHandler, Response } from 'express';
-import { env } from '@/config/env';
+import { allowedOrigins, env } from '@/config/env';
 import { AppError } from '@/errors/AppError';
 import { getAuthUser } from '@/middlewares/auth.middleware';
 import { loginSchema, selectRoleSchema, signupSchema } from '@/schemas/auth.schema';
@@ -99,4 +99,22 @@ export const logoutController: RequestHandler = async (request, response) => {
   response.json({
     success: true,
   });
+};
+
+export const googleCallbackController: RequestHandler = async (request, response) => {
+  const refreshToken = request.authInfo?.refreshToken;
+
+  if (!request.user || !refreshToken) {
+    throw new AppError(
+      401,
+      'GOOGLE_AUTH_FAILED',
+      'Google authentication failed.',
+    );
+  }
+
+  setRefreshCookie(response, refreshToken);
+
+  const frontendUrl = allowedOrigins[0] ?? 'http://localhost:3000';
+
+  response.redirect(`${frontendUrl}/oauth/callback`);
 };

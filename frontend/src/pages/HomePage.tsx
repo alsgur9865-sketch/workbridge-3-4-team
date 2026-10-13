@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useAuthStore } from '@/stores/auth.store';
 import {
   ArrowRight,
   BriefcaseBusiness,
@@ -60,6 +61,7 @@ const journeys = [
 ];
 
 export function HomePage() {
+  const user = useAuthStore((state) => state.user);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
   const projectsQuery = useProjects({
@@ -100,12 +102,14 @@ export function HomePage() {
                 프로젝트 찾기
                 <ArrowRight className="size-4" aria-hidden="true" />
               </a>
-              <Link
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-                to="/projects/new"
-              >
-                프로젝트 등록하기
-              </Link>
+              {user?.role === 'CLIENT' && (
+                <Link
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                  to="/projects/new"
+                >
+                  프로젝트 등록하기
+                </Link>
+              )}
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-semibold text-slate-600">
@@ -292,9 +296,11 @@ export function HomePage() {
           </div>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            {journeys.map((journey) => (
-              <JourneyCard journey={journey} key={journey.eyebrow} />
-            ))}
+            {journeys
+              .filter((journey) => journey.to !== '/projects/new' || user?.role === 'CLIENT')
+              .map((journey) => (
+                <JourneyCard journey={journey} key={journey.eyebrow} />
+              ))}
           </div>
         </div>
       </section>

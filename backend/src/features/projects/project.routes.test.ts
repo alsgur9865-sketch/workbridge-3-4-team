@@ -13,6 +13,7 @@ const projectServiceMock = vi.hoisted(() => ({
   deleteProject: vi.fn(),
   getProject: vi.fn(),
   listProjects: vi.fn(),
+  recommendProjects: vi.fn(),
   removeProjectBookmark: vi.fn(),
   updateProject: vi.fn(),
 }));
@@ -48,6 +49,27 @@ function accessToken(userId: string, role: 'CLIENT' | 'FREELANCER') {
 describe('project routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('serves recommendations only to the authenticated freelancer before the id route', async () => {
+    expect((await request(app).get('/api/v1/projects/recommended')).status).toBe(401);
+    expect(
+      (
+        await request(app)
+          .get('/api/v1/projects/recommended')
+          .set('Authorization', `Bearer ${accessToken(clientId, 'CLIENT')}`)
+      ).status,
+    ).toBe(403);
+    projectServiceMock.recommendProjects.mockResolvedValue({
+      data: [],
+      meta: { profileRequired: true },
+    });
+    const result = await request(app)
+      .get('/api/v1/projects/recommended')
+      .set('Authorization', `Bearer ${accessToken(freelancerId, 'FREELANCER')}`);
+    expect(result.status).toBe(200);
+    expect(result.body.meta.profileRequired).toBe(true);
+    expect(projectServiceMock.recommendProjects).toHaveBeenCalledWith(freelancerId);
   });
 
   it('rejects an invalid project id before querying the database', async () => {

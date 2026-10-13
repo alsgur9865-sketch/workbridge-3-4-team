@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { apiClient } from '@/lib/api-client';
+import { useAuthStore } from '@/stores/auth.store';
 
 export type ProjectRecruitmentStatus = 'SCHEDULED' | 'OPEN' | 'CLOSED';
 
@@ -26,6 +27,8 @@ export interface Project {
   };
   skills: string[];
   isBookmarked: boolean;
+  myApplication?: { id: string; status: 'PENDING' | 'ACCEPTED' | 'REJECTED' } | null;
+  recommendation?: { matchedSkills: string[]; categoryMatched: boolean; score: number };
 }
 
 export interface ProjectFilters {
@@ -94,9 +97,11 @@ interface ProjectResponse {
 const projectKeys = {
   all: ['projects'] as const,
   lists: () => [...projectKeys.all, 'list'] as const,
-  list: (filters: ProjectFilters) => [...projectKeys.lists(), filters] as const,
+  list: (filters: ProjectFilters, userId: string | null) =>
+    [...projectKeys.lists(), userId, filters] as const,
   details: () => [...projectKeys.all, 'detail'] as const,
-  detail: (projectId: string) => [...projectKeys.details(), projectId] as const,
+  detail: (projectId: string, userId?: string | null) =>
+    [...projectKeys.details(), projectId, userId] as const,
 };
 
 export async function fetchProjects(filters: ProjectFilters = {}) {
@@ -112,18 +117,39 @@ export async function fetchProject(projectId: string) {
 }
 
 export function useProjects(filters: ProjectFilters = {}) {
+  const userId = useAuthStore((state) => state.user?.id ?? null);
   return useQuery({
-    queryKey: projectKeys.list(filters),
+    queryKey: projectKeys.list(filters, userId),
     queryFn: () => fetchProjects(filters),
-    placeholderData: keepPreviousData,
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[2] === userId ? keepPreviousData(previousData) : undefined,
+    refetchInterval: 30_000,
   });
 }
 
-export function useProject(projectId: string) {
+export function useProject(projectId: string, enabled = true) {
+  const userId = useAuthStore((state) => state.user?.id ?? null);
   return useQuery({
-    queryKey: projectKeys.detail(projectId),
+    queryKey: projectKeys.detail(projectId, userId),
     queryFn: () => fetchProject(projectId),
-    enabled: Boolean(projectId),
+    enabled: Boolean(projectId) && enabled,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useRecommendedProjects() {
+  const user = useAuthStore((state) => state.user);
+  return useQuery({
+    queryKey: [...projectKeys.all, 'recommended', user?.id ?? null],
+    queryFn: async () => {
+      const response = await apiClient.get<{
+        data: Project[];
+        meta: { profileRequired: boolean };
+      }>('/projects/recommended');
+      return response.data;
+    },
+    enabled: user?.role === 'FREELANCER',
+    refetchInterval: 30_000,
   });
 }
 
@@ -134,10 +160,7 @@ export function useCreateProject() {
       const response = await apiClient.post<ProjectResponse>('/projects', input);
       return response.data.data;
     },
-    onSuccess: (project) => {
-      queryClient.setQueryData(projectKeys.detail(project.id), project);
-      void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectKeys.all }),
   });
 }
 
@@ -148,10 +171,7 @@ export function useUpdateProject(projectId: string) {
       const response = await apiClient.patch<ProjectResponse>(`/projects/${projectId}`, input);
       return response.data.data;
     },
-    onSuccess: (project) => {
-      queryClient.setQueryData(projectKeys.detail(project.id), project);
-      void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: projectKeys.all }),
   });
 }
 
@@ -163,8 +183,8 @@ export function useDeleteProject() {
       return projectId;
     },
     onSuccess: (projectId) => {
-      queryClient.removeQueries({ queryKey: projectKeys.detail(projectId) });
-      void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
+      queryClient.removeQueries({ queryKey: [...projectKeys.details(), projectId] });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 }
@@ -182,8 +202,7 @@ export function useToggleBookmark(projectId: string, isBookmarked: boolean) {
       return true;
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: projectKeys.lists() });
-      void queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+      void queryClient.invalidateQueries({ queryKey: projectKeys.all });
     },
   });
 }
