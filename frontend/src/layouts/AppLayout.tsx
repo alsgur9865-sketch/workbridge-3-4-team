@@ -1,7 +1,8 @@
-import { BriefcaseBusiness, ChevronRight, LogOut } from 'lucide-react';
+import { Bell, BriefcaseBusiness, ChevronRight, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '@/features/auth/api';
+import { useUnreadNotificationCount } from '@/features/notifications/api';
 import { useAuthStore } from '@/stores/auth.store';
 
 const navigation = [
@@ -15,6 +16,7 @@ export function AppLayout() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const clearSession = useAuthStore((state) => state.clearSession);
+  const unreadCountQuery = useUnreadNotificationCount();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   if (user && user.role === null && location.pathname !== '/select-role') {
@@ -31,6 +33,8 @@ export function AppLayout() {
       navigate('/');
     }
   }
+
+  const unreadCount = unreadCountQuery.data ?? 0;
 
   return (
     <div className="min-h-screen bg-white text-slate-950">
@@ -62,6 +66,18 @@ export function AppLayout() {
           <div className="flex items-center gap-2 sm:gap-3">
             {user ? (
               <>
+                <Link
+                  className="relative inline-flex size-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+                  to="/notifications"
+                  aria-label={unreadCount > 0 ? `알림 ${unreadCount}개 안 읽음` : '알림'}
+                >
+                  <Bell className="size-4" aria-hidden="true" />
+                  {unreadCount > 0 ? (
+                    <span className="absolute -right-1.5 -top-1.5 flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-black leading-4 text-white">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  ) : null}
+                </Link>
                 <Link
                   className="hidden max-w-40 truncate text-sm font-semibold text-slate-700 hover:text-brand-700 sm:inline"
                   to="/profile"
@@ -139,9 +155,14 @@ export function AppLayout() {
                   회원가입
                 </Link>
                 {user ? (
-                  <Link className="hover:text-white" to="/profile">
-                    내 프로필
-                  </Link>
+                  <>
+                    <Link className="hover:text-white" to="/profile">
+                      내 프로필
+                    </Link>
+                    <Link className="hover:text-white" to="/notifications">
+                      알림
+                    </Link>
+                  </>
                 ) : null}
                 {user?.role === 'CLIENT' && (
                   <Link className="hover:text-white" to="/projects/new">
