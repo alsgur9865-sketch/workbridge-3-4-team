@@ -8,6 +8,7 @@ import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { getApplicationErrorMessage } from '@/features/applications/format';
 import { useApplyToProject } from '@/features/applications/hooks';
 import { useAuthStore } from '@/stores/auth.store';
+import { useProject } from '@/features/projects/projects.api';
 
 const applySchema = z.object({
   introduction: z
@@ -37,6 +38,7 @@ export function ApplyPage() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const applyMutation = useApplyToProject(projectId);
+  const projectQuery = useProject(projectId, user?.role === 'FREELANCER');
 
   const {
     register,
@@ -63,6 +65,41 @@ export function ApplyPage() {
         title="프리랜서만 지원할 수 있습니다"
         description="프로젝트 지원은 프리랜서 역할의 계정에서만 가능합니다."
       />
+    );
+  }
+
+  if (projectQuery.isPending) {
+    return (
+      <p className="px-5 py-16 text-center" role="status">
+        프로젝트 모집 상태를 확인하고 있습니다.
+      </p>
+    );
+  }
+  if (projectQuery.isError || !projectQuery.data) {
+    return (
+      <AccessNotice
+        title="프로젝트를 확인할 수 없습니다"
+        description="프로젝트 목록에서 다시 확인해 주세요."
+      />
+    );
+  }
+  if (projectQuery.data.myApplication || projectQuery.data.recruitmentStatus !== 'OPEN') {
+    return (
+      <section className="px-5 py-16 text-center">
+        <h1 className="text-2xl font-bold">
+          {projectQuery.data.myApplication
+            ? '이미 지원한 프로젝트입니다'
+            : projectQuery.data.recruitmentStatus === 'SCHEDULED'
+              ? '아직 모집 시작 전입니다'
+              : '모집이 마감되었습니다'}
+        </h1>
+        <Link
+          className="mt-5 inline-block font-bold text-brand-700 underline"
+          to={`/projects/${projectId}`}
+        >
+          프로젝트 상세로 돌아가기
+        </Link>
+      </section>
     );
   }
 

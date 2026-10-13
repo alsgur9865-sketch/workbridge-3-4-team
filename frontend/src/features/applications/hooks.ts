@@ -58,7 +58,12 @@ export function useApplyToProject(projectId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: CreateApplicationInput) => applicationApi.applyToProject(projectId, input),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: applicationKeys.all }),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: applicationKeys.all }),
+        queryClient.invalidateQueries({ queryKey: ['projects'] }),
+      ]);
+    },
   });
 }
 
@@ -68,6 +73,9 @@ export function useDecideApplication(projectId: string) {
     mutationFn: (params: { applicationId: string; status: ApplicationDecision }) =>
       applicationApi.decideApplication(params.applicationId, params.status),
     onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: applicationKeys.byProject(projectId) }),
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: applicationKeys.byProject(projectId) }),
+        queryClient.invalidateQueries({ queryKey: ['projects'] }),
+      ]),
   });
 }

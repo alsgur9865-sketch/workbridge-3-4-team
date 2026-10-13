@@ -74,18 +74,28 @@ export async function respondToPriceOffer(
     throw new AppError(409, 'NO_PENDING_PRICE_OFFER', 'There is no pending price offer.');
   }
 
+  // Both accepting and rejecting are only valid while the selected application is
+  // still in the price agreement stage.
+  if (
+    project.transactionStatus !== 'PRICE_AGREEMENT' ||
+    project.selectedApplicationId !== application.id
+  ) {
+    throw new AppError(
+      409,
+      'PRICE_AGREEMENT_CLOSED',
+      'The project is not in the price agreement stage.',
+    );
+  }
+
+  const params = {
+    applicationId,
+    projectId: project.id,
+    clientId: project.clientId,
+    projectTitle: project.title,
+  };
   const updated =
     response === 'ACCEPTED'
-      ? await priceOfferRepository.acceptPriceOffer({
-          applicationId,
-          projectId: project.id,
-          clientId: project.clientId,
-          projectTitle: project.title,
-        })
-      : await priceOfferRepository.rejectPriceOffer({
-          applicationId,
-          clientId: project.clientId,
-          projectTitle: project.title,
-        });
+      ? await priceOfferRepository.acceptPriceOffer(params)
+      : await priceOfferRepository.rejectPriceOffer(params);
   return toApplicationDto(updated);
 }
