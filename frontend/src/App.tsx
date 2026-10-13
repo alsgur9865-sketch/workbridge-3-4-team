@@ -12,10 +12,12 @@ import { ContractCreatePage } from '@/pages/contracts/ContractCreatePage';
 import { ContractDetailPage } from '@/pages/contracts/ContractDetailPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { NotificationsPage } from '@/pages/NotificationsPage';
+import { PriceEstimatePage } from '@/pages/PriceEstimatePage';
+import { ProfilePage } from '@/pages/ProfilePage';
 import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
 import { ProjectFormPage } from '@/pages/ProjectFormPage';
 import { ProjectListPage } from '@/pages/ProjectListPage';
-import { PriceEstimatePage } from '@/pages/PriceEstimatePage';
 
 export function App() {
   return (
@@ -27,6 +29,8 @@ export function App() {
         <Route path="signup" element={<SignupPage />} />
         <Route path="oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="select-role" element={<RoleSelectionPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
 
         <Route path="projects" element={<ProjectListPage />} />
         <Route path="projects/new" element={<ProjectFormPage />} />
