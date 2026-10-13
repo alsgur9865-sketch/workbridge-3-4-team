@@ -99,10 +99,11 @@ export async function acceptPriceOffer(params: {
 
 export async function rejectPriceOffer(params: {
   applicationId: string;
+  projectId: string;
   clientId: string;
   projectTitle: string;
 }) {
-  const { applicationId, clientId, projectTitle } = params;
+  const { applicationId, projectId, clientId, projectTitle } = params;
 
   return getPrisma().$transaction(async (tx) => {
     const rejected = await tx.application.updateMany({
@@ -111,6 +112,21 @@ export async function rejectPriceOffer(params: {
     });
     if (rejected.count === 0) {
       throw new AppError(409, 'NO_PENDING_PRICE_OFFER', 'There is no pending price offer.');
+    }
+
+    const stillNegotiating = await tx.project.count({
+      where: {
+        id: projectId,
+        selectedApplicationId: applicationId,
+        transactionStatus: 'PRICE_AGREEMENT',
+      },
+    });
+    if (stillNegotiating === 0) {
+      throw new AppError(
+        409,
+        'PRICE_AGREEMENT_CLOSED',
+        'The project is no longer in the price agreement stage.',
+      );
     }
 
     await tx.notification.create({

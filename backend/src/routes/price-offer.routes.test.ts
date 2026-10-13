@@ -227,6 +227,48 @@ describe('PATCH /applications/:applicationId/price-offer', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.data.priceOfferStatus).toBe('REJECTED');
+    expect(priceOfferRepository.rejectPriceOffer).toHaveBeenCalledWith({
+      applicationId,
+      projectId,
+      clientId,
+      projectTitle: '테스트 프로젝트',
+    });
+  });
+
+  it.each(['ACCEPTED', 'REJECTED'])(
+    'blocks a %s response once the project left the price agreement stage',
+    async (status) => {
+      applicationRepository.findApplicationWithProject.mockResolvedValue(
+        selectedApplication(
+          { priceOfferStatus: 'PENDING', clientOfferAmount: '4500000' },
+          { transactionStatus: 'CANCELLED' },
+        ),
+      );
+
+      const response = await request(app)
+        .patch(url)
+        .set('Authorization', tokenFor(freelancerId, 'FREELANCER'))
+        .send({ status });
+
+      expect(response.status).toBe(409);
+      expect(response.body.error.code).toBe('PRICE_AGREEMENT_CLOSED');
+      expect(priceOfferRepository.acceptPriceOffer).not.toHaveBeenCalled();
+      expect(priceOfferRepository.rejectPriceOffer).not.toHaveBeenCalled();
+    },
+  );
+
+  it('surfaces conflicts raised inside the reject transaction', async () => {
+    applicationRepository.findApplicationWithProject.mockResolvedValue(pendingOffer());
+    priceOfferRepository.rejectPriceOffer.mockRejectedValue(
+      new AppError(409, 'PRICE_AGREEMENT_CLOSED', 'The project is no longer in this stage.'),
+    );
+
+    const response = await request(app)
+      .patch(url)
+      .set('Authorization', tokenFor(freelancerId, 'FREELANCER'))
+      .send({ status: 'REJECTED' });
+    expect(response.status).toBe(409);
+    expect(response.body.error.code).toBe('PRICE_AGREEMENT_CLOSED');
   });
 
   it('rejects other freelancers', async () => {
