@@ -85,7 +85,7 @@ describe('ProfilePage', () => {
 
     renderPage();
 
-    expect(screen.getByDisplayValue('Web Development')).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: '주 분야' })).toHaveValue('Web Development');
     expect(screen.getByDisplayValue('React, TypeScript')).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('경력 연수'), {
