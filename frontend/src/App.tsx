@@ -9,6 +9,7 @@ import { RoleSelectionPage } from '@/pages/auth/RoleSelectionPage';
 import { SignupPage } from '@/pages/auth/SignupPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { NotificationsPage } from '@/pages/NotificationsPage';
 import { PriceEstimatePage } from '@/pages/PriceEstimatePage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
@@ -26,6 +27,7 @@ export function App() {
         <Route path="oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="select-role" element={<RoleSelectionPage />} />
         <Route path="profile" element={<ProfilePage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
 
         <Route path="projects" element={<ProjectListPage />} />
         <Route path="projects/new" element={<ProjectFormPage />} />
