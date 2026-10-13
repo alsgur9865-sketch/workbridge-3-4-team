@@ -14,11 +14,22 @@ import {
   deleteProject,
   getProject,
   listProjects,
+  recommendProjects,
   removeProjectBookmark,
   updateProject,
 } from '@/features/projects/project.service';
 
 export const projectRouter = Router();
+
+projectRouter.get(
+  '/recommended',
+  requireAuth,
+  requireRole('FREELANCER'),
+  async (request, response) => {
+    const result = await recommendProjects(getAuthUser(request).id);
+    response.json({ success: true, ...result });
+  },
+);
 
 projectRouter.get('/', optionalAuth, async (request, response) => {
   const query = projectListQuerySchema.parse(request.query);

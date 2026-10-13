@@ -9,6 +9,9 @@ import { MyApplicationsPage } from '@/pages/applications/MyApplicationsPage';
 import { ProjectApplicationsPage } from '@/pages/applications/ProjectApplicationsPage';
 import { useAuthStore } from '@/stores/auth.store';
 
+const projectQuery = vi.hoisted(() => vi.fn());
+vi.mock('@/features/projects/projects.api', () => ({ useProject: projectQuery }));
+
 vi.mock('@/features/applications/api', () => ({
   applyToProject: vi.fn(),
   getProjectApplications: vi.fn(),
@@ -57,6 +60,11 @@ const baseApplication = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  projectQuery.mockReturnValue({
+    data: { recruitmentStatus: 'OPEN', myApplication: null },
+    isPending: false,
+    isError: false,
+  });
   useAuthStore.getState().clearSession();
 });
 
@@ -71,6 +79,18 @@ describe('ApplyPage', () => {
   it('asks guests to log in', () => {
     renderAt(`/projects/${projectId}/apply`, routes);
     expect(screen.getByRole('heading', { name: '로그인이 필요합니다' })).toBeInTheDocument();
+  });
+
+  it('blocks direct form navigation when recruitment has closed', () => {
+    signInAs('FREELANCER');
+    projectQuery.mockReturnValue({
+      data: { recruitmentStatus: 'CLOSED', myApplication: null },
+      isPending: false,
+      isError: false,
+    });
+    renderAt(`/projects/${projectId}/apply`, routes);
+    expect(screen.getByRole('heading', { name: '모집이 마감되었습니다' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /지원서 제출/ })).not.toBeInTheDocument();
   });
 
   it('shows validation errors for an empty form', async () => {

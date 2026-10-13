@@ -1,4 +1,5 @@
 import { AppError } from '@/errors/AppError';
+import { getRecruitmentStatus } from '@/features/projects/recruitment-status';
 import * as applicationRepository from '@/repositories/application.repository';
 import type {
   ApplicationDecision,
@@ -54,7 +55,7 @@ function toMyApplicationDto(application: MyApplicationRecord) {
       id: application.project.id,
       title: application.project.title,
       budget: Number(application.project.budget),
-      recruitmentStatus: application.project.recruitmentStatus,
+      recruitmentStatus: getRecruitmentStatus(application.project),
       transactionStatus: application.project.transactionStatus,
     },
   };
@@ -79,7 +80,7 @@ export async function applyToProject(
     throw new AppError(403, 'CANNOT_APPLY_OWN_PROJECT', 'You cannot apply to your own project.');
   }
 
-  if (project.recruitmentStatus !== 'OPEN' || project.recruitmentDeadline.getTime() < Date.now()) {
+  if (getRecruitmentStatus(project) !== 'OPEN') {
     throw new AppError(409, 'RECRUITMENT_CLOSED', 'The project is not accepting applications.');
   }
 

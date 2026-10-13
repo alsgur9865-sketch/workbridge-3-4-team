@@ -72,6 +72,11 @@ describe('ProjectDetailPage permissions', () => {
 
     expect(screen.getByRole('link', { name: '수정하기' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '삭제하기' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '지원자 보기' })).toHaveAttribute(
+      'href',
+      '/projects/project-1/applications',
+    );
+    expect(screen.queryByRole('link', { name: '지원하기' })).not.toBeInTheDocument();
   });
 
   it('hides edit and delete controls from users who do not own the project', () => {
@@ -89,5 +94,61 @@ describe('ProjectDetailPage permissions', () => {
 
     expect(screen.queryByRole('link', { name: '수정하기' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '삭제하기' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '지원하기' })).toHaveAttribute(
+      'href',
+      '/projects/project-1/apply',
+    );
+    expect(screen.queryByRole('link', { name: '지원자 보기' })).not.toBeInTheDocument();
+  });
+
+  it.each(['CLOSED', 'SCHEDULED'])('blocks applications for a %s project', (status) => {
+    useAuthStore.setState({
+      user: {
+        id: 'freelancer-1',
+        email: 'freelancer@example.com',
+        name: '프리랜서',
+        role: 'FREELANCER',
+      },
+    });
+    projectApiMock.useProject.mockReturnValue({
+      data: { ...project, recruitmentStatus: status },
+      isPending: false,
+      isError: false,
+    });
+    renderPage();
+    expect(screen.queryByRole('link', { name: '지원하기' })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('button', {
+        name: status === 'CLOSED' ? '모집이 마감되었습니다' : '모집 시작 전입니다',
+      }),
+    ).toBeDisabled();
+  });
+
+  it('shows an existing application instead of another apply button', () => {
+    useAuthStore.setState({
+      user: {
+        id: 'freelancer-1',
+        email: 'freelancer@example.com',
+        name: '프리랜서',
+        role: 'FREELANCER',
+      },
+    });
+    projectApiMock.useProject.mockReturnValue({
+      data: { ...project, myApplication: { id: 'application-1', status: 'PENDING' } },
+      isPending: false,
+      isError: false,
+    });
+    renderPage();
+    expect(screen.getByText('이미 지원한 프로젝트 · 검토 중')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '지원하기' })).not.toBeInTheDocument();
+  });
+
+  it('does not show owner controls to another client or a guest', () => {
+    useAuthStore.setState({
+      user: { id: 'other-client', email: 'client@example.com', name: '의뢰인', role: 'CLIENT' },
+    });
+    renderPage();
+    expect(screen.queryByRole('link', { name: '지원자 보기' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '수정하기' })).not.toBeInTheDocument();
   });
 });
