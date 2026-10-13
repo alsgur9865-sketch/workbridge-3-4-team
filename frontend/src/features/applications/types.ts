@@ -51,6 +51,7 @@ export interface ApplicationDetail extends ProjectApplication {
     workEndAt: string;
     isSelected: boolean;
   };
+  contract: { id: string; status: string } | null;
 }
 
 export interface CreateApplicationInput {

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Check, CircleDollarSign, Handshake, X } from 'lucide-react';
+import { ArrowLeft, Check, CircleDollarSign, FileSignature, Handshake, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
@@ -162,12 +162,43 @@ export function PriceAgreementPage() {
   );
 }
 
-function AgreedNotice() {
+const contractLinkClassName =
+  'inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700';
+
+function AgreedNotice({
+  application,
+  isClient,
+}: {
+  application: ApplicationDetail;
+  isClient: boolean;
+}) {
+  const { contract } = application;
+
   return (
-    <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-      <Handshake className="size-4" aria-hidden="true" />
-      최종 금액이 확정되었습니다. 다음 단계는 계약서 작성입니다.
-    </p>
+    <div className="grid gap-4">
+      <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+        <Handshake className="size-4" aria-hidden="true" />
+        최종 금액이 확정되었습니다. 다음 단계는 계약서 작성입니다.
+      </p>
+      <div className="flex justify-end">
+        {contract ? (
+          <Link className={contractLinkClassName} to={`/contracts/${contract.id}`}>
+            <FileSignature className="size-4" aria-hidden="true" />
+            계약서 보기
+          </Link>
+        ) : isClient ? (
+          <Link
+            className={contractLinkClassName}
+            to={`/applications/${application.id}/contract/new`}
+          >
+            <FileSignature className="size-4" aria-hidden="true" />
+            계약서 작성하기
+          </Link>
+        ) : (
+          <p className="text-sm text-slate-500">의뢰인이 계약서를 준비하고 있습니다.</p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -189,7 +220,7 @@ function ClientActions({ application }: { application: ApplicationDetail }) {
   } = useForm<OfferFormValues>({ resolver: zodResolver(offerSchema) });
 
   if (application.priceOfferStatus === 'ACCEPTED') {
-    return <AgreedNotice />;
+    return <AgreedNotice application={application} isClient />;
   }
 
   if (application.priceOfferStatus === 'PENDING') {
@@ -254,7 +285,7 @@ function FreelancerActions({ application }: { application: ApplicationDetail }) 
   const respondMutation = useRespondToPriceOffer(application.id);
 
   if (application.priceOfferStatus === 'ACCEPTED') {
-    return <AgreedNotice />;
+    return <AgreedNotice application={application} isClient={false} />;
   }
 
   if (application.priceOfferStatus === 'NONE') {

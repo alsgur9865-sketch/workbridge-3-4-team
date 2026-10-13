@@ -8,6 +8,8 @@ import { LoginPage } from '@/pages/auth/LoginPage';
 import { OAuthCallbackPage } from '@/pages/auth/OAuthCallbackPage';
 import { RoleSelectionPage } from '@/pages/auth/RoleSelectionPage';
 import { SignupPage } from '@/pages/auth/SignupPage';
+import { ContractCreatePage } from '@/pages/contracts/ContractCreatePage';
+import { ContractDetailPage } from '@/pages/contracts/ContractDetailPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
@@ -40,6 +42,8 @@ export function App() {
 
         <Route path="applications/me" element={<MyApplicationsPage />} />
         <Route path="applications/:applicationId/price" element={<PriceAgreementPage />} />
+        <Route path="applications/:applicationId/contract/new" element={<ContractCreatePage />} />
+        <Route path="contracts/:contractId" element={<ContractDetailPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

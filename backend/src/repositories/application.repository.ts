@@ -136,6 +136,7 @@ export function findApplicationDetail(applicationId: string) {
     where: { id: applicationId },
     include: {
       freelancer: { select: freelancerSummarySelect },
+      contract: { select: { id: true, status: true } },
       project: {
         select: {
           ...projectSummarySelect,
