@@ -69,3 +69,49 @@ export function clearRefreshTokenHash(userId: string) {
     data: { refreshTokenHash: null },
   });
 }
+
+export function findUserByGoogleId(oauthProviderId: string) {
+  return getPrisma().user.findUnique({
+    where: {
+      oauthProvider_oauthProviderId: {
+        oauthProvider: 'GOOGLE',
+        oauthProviderId,
+      },
+    },
+  });
+}
+
+export function createGoogleUser(input: {
+  email: string;
+  name: string;
+  oauthProviderId: string;
+  profileImageUrl?: string | null;
+}) {
+  return getPrisma().user.create({
+    data: {
+      email: input.email,
+      name: input.name,
+      passwordHash: null,
+      oauthProvider: 'GOOGLE',
+      oauthProviderId: input.oauthProviderId,
+      profileImageUrl: input.profileImageUrl ?? null,
+    },
+  });
+}
+
+export function linkGoogleAccount(
+  userId: string,
+  input: {
+    oauthProviderId: string;
+    profileImageUrl?: string | null;
+  },
+) {
+  return getPrisma().user.update({
+    where: { id: userId },
+    data: {
+      oauthProvider: 'GOOGLE',
+      oauthProviderId: input.oauthProviderId,
+      profileImageUrl: input.profileImageUrl ?? undefined,
+    },
+  });
+}
