@@ -180,6 +180,10 @@ describe('MyApplicationsPage', () => {
 
     expect(await screen.findByText('프리랜서 매칭 대시보드 구축')).toBeInTheDocument();
     expect(screen.getByText('수락됨')).toBeInTheDocument();
-    expect(screen.getByText(/최종 금액 협의를 진행해 주세요/)).toBeInTheDocument();
+    expect(screen.getByText(/의뢰인의 최종 금액 제안을 기다리고 있습니다/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '금액 협의 보기' })).toHaveAttribute(
+      'href',
+      '/applications/application-1/price',
+    );
   });
 });

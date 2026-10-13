@@ -15,7 +15,7 @@ type MyApplicationRecord = Awaited<
   ReturnType<typeof applicationRepository.listApplicationsByFreelancer>
 >[number];
 
-function toApplicationDto(application: ApplicationRecord) {
+export function toApplicationDto(application: ApplicationRecord) {
   return {
     id: application.id,
     projectId: application.projectId,
@@ -119,6 +119,37 @@ export async function listProjectApplications(
 export async function listMyApplications(user: AuthUser, status?: ApplicationStatusValue) {
   const applications = await applicationRepository.listApplicationsByFreelancer(user.id, status);
   return applications.map(toMyApplicationDto);
+}
+
+export async function getApplicationDetail(user: AuthUser, applicationId: string) {
+  const application = await applicationRepository.findApplicationDetail(applicationId);
+  if (!application || application.project.deletedAt) {
+    throw new AppError(404, 'APPLICATION_NOT_FOUND', 'The application does not exist.');
+  }
+
+  const { project } = application;
+  if (project.clientId !== user.id && application.freelancerId !== user.id) {
+    throw new AppError(
+      403,
+      'NOT_APPLICATION_PARTICIPANT',
+      'Only the project owner or the applicant can view this application.',
+    );
+  }
+
+  return {
+    ...toProjectApplicationDto(application),
+    project: {
+      id: project.id,
+      title: project.title,
+      budget: Number(project.budget),
+      clientId: project.clientId,
+      recruitmentStatus: project.recruitmentStatus,
+      transactionStatus: project.transactionStatus,
+      workStartAt: project.workStartAt,
+      workEndAt: project.workEndAt,
+      isSelected: project.selectedApplicationId === application.id,
+    },
+  };
 }
 
 export async function decideApplication(

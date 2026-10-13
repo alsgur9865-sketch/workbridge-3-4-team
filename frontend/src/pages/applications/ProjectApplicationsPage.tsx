@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { CalendarDays, CircleDollarSign, UserRound } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { ApplicationStatusBadge } from '@/features/applications/components/ApplicationStatusBadge';
+import { PriceOfferStatusBadge } from '@/features/applications/components/PriceOfferStatusBadge';
 import {
   applicationStatusLabels,
   formatDate,
@@ -181,6 +182,20 @@ export function ProjectApplicationsPage() {
                   >
                     이 지원자 선정
                   </Button>
+                </div>
+              ) : null}
+
+              {application.status === 'ACCEPTED' ? (
+                <div className="mt-6 flex flex-wrap items-center justify-end gap-3">
+                  <PriceOfferStatusBadge status={application.priceOfferStatus} />
+                  <Link
+                    className="inline-flex h-10 items-center justify-center rounded-md bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700"
+                    to={`/applications/${application.id}/price`}
+                  >
+                    {application.priceOfferStatus === 'ACCEPTED'
+                      ? '확정 금액 보기'
+                      : '금액 협의하기'}
+                  </Link>
                 </div>
               ) : null}
             </li>

@@ -40,6 +40,16 @@ export const listMyApplications: RequestHandler = async (request, response) => {
   response.json({ success: true, data: applications });
 };
 
+export const getApplication: RequestHandler = async (request, response) => {
+  const { applicationId } = applicationIdParamsSchema.parse(request.params);
+
+  const application = await applicationService.getApplicationDetail(
+    getAuthUser(request),
+    applicationId,
+  );
+  response.json({ success: true, data: application });
+};
+
 export const decideApplication: RequestHandler = async (request, response) => {
   const { applicationId } = applicationIdParamsSchema.parse(request.params);
   const { status } = updateApplicationStatusSchema.parse(request.body);
