@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, Circle, PartyPopper, PenLine } from 'lucide-react';
+import { CheckCircle2, Circle, PartyPopper, PenLine, Star } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
@@ -79,7 +79,20 @@ function ContractDocument({
       </div>
       <h1 className="mt-2 text-3xl font-bold tracking-tight">{contract.projectTitle}</h1>
 
-      {contract.status === 'SIGNED' ? (
+      {contract.projectTransactionStatus === 'COMPLETED' ? (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
+          <p className="flex items-center gap-2 text-sm font-semibold text-amber-800">
+            <Star className="size-4" aria-hidden="true" />
+            프로젝트가 완료되었습니다. 함께한 상대방에게 리뷰를 남겨 주세요.
+          </p>
+          <Link
+            className="inline-flex h-9 items-center justify-center rounded-md bg-brand-600 px-3 text-sm font-medium text-white hover:bg-brand-700"
+            to={`/contracts/${contract.id}/review`}
+          >
+            리뷰 작성하기
+          </Link>
+        </div>
+      ) : contract.status === 'SIGNED' ? (
         <p className="mt-6 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
           <PartyPopper className="size-4" aria-hidden="true" />
           양측 서명이 완료되어 계약이 체결되었습니다. 결제 완료 후 결과물을 제출하고 확인할 수

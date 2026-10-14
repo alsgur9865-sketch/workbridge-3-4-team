@@ -8,6 +8,7 @@ import { healthRouter } from '@/routes/health.routes';
 import { notificationRouter } from '@/routes/notification.routes';
 import { paymentRouter } from '@/routes/payment.routes';
 import { priceOfferRouter } from '@/routes/price-offer.routes';
+import { reviewRouter } from '@/routes/review.routes';
 import { userRouter } from '@/routes/user.routes';
 import { releasePaymentForContract } from '@/services/payment.service';
 
@@ -23,3 +24,4 @@ apiRouter.use(createDeliveryRouter(releasePaymentForContract));
 apiRouter.use(applicationRouter);
 apiRouter.use(priceOfferRouter);
 apiRouter.use(paymentRouter);
+apiRouter.use(reviewRouter);

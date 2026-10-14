@@ -74,7 +74,9 @@ export function findContractDetail(contractId: string) {
   return getPrisma().contract.findUnique({
     where: { id: contractId },
     include: {
-      project: { select: { id: true, title: true, clientId: true, deletedAt: true } },
+      project: {
+        select: { id: true, title: true, clientId: true, transactionStatus: true, deletedAt: true },
+      },
       application: { select: { id: true, freelancerId: true } },
     },
   });

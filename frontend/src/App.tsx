@@ -21,6 +21,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
 import { ProjectFormPage } from '@/pages/ProjectFormPage';
 import { ProjectListPage } from '@/pages/ProjectListPage';
+import { ContractReviewPage } from '@/pages/reviews/ContractReviewPage';
 
 export function App() {
   return (
@@ -48,6 +49,7 @@ export function App() {
         <Route path="applications/:applicationId/contract/new" element={<ContractCreatePage />} />
         <Route path="contracts/:contractId" element={<ContractDetailPage />} />
         <Route path="contracts/:contractId/delivery" element={<DeliveryPage />} />
+        <Route path="contracts/:contractId/review" element={<ContractReviewPage />} />
         <Route path="payments/success" element={<PaymentSuccessPage />} />
         <Route path="payments/fail" element={<PaymentFailPage />} />
 
