@@ -112,11 +112,14 @@ async function getParticipantContract(user: AuthUser, contractId: string) {
 
 export async function getContract(user: AuthUser, contractId: string) {
   const { contract, clientId, freelancerId } = await getParticipantContract(user, contractId);
-  return toContractDto(contract, {
-    clientId,
-    freelancerId,
-    projectTitle: contract.project.title,
-  });
+  return {
+    ...toContractDto(contract, {
+      clientId,
+      freelancerId,
+      projectTitle: contract.project.title,
+    }),
+    projectTransactionStatus: contract.project.transactionStatus,
+  };
 }
 
 export async function signContract(user: AuthUser, contractId: string) {
@@ -131,5 +134,11 @@ export async function signContract(user: AuthUser, contractId: string) {
     freelancerId,
   });
 
-  return toContractDto(signed, { clientId, freelancerId, projectTitle: contract.project.title });
+  return {
+    ...toContractDto(signed, { clientId, freelancerId, projectTitle: contract.project.title }),
+    projectTransactionStatus:
+      signed.status === 'SIGNED' && contract.project.transactionStatus === 'CONTRACT_PENDING'
+        ? 'PAYMENT_PENDING'
+        : contract.project.transactionStatus,
+  };
 }

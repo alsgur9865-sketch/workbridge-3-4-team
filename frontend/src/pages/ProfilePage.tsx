@@ -14,6 +14,7 @@ import {
   useUpdateCommonProfile,
   useUpdateFreelancerProfile,
 } from '@/features/profile/api';
+import { ReviewSummary } from '@/features/reviews/components/ReviewSummary';
 import { useAuthStore } from '@/stores/auth.store';
 
 const commonSchema = z.object({
@@ -115,6 +116,8 @@ export function ProfilePage() {
               profile={profile.profile?.role === 'FREELANCER' ? profile.profile : null}
             />
           ) : null}
+
+          <ReviewSummary userId={profile.id} />
         </div>
       </div>
     </main>

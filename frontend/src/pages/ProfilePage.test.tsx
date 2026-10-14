@@ -18,6 +18,15 @@ vi.mock('@/features/profile/api', async () => {
   };
 });
 
+vi.mock('@/features/reviews/api', () => ({
+  getUserReviews: vi.fn().mockResolvedValue({
+    user: { id: 'user-1', name: null, role: null },
+    averageRating: null,
+    reviewCount: 0,
+    reviews: [],
+  }),
+}));
+
 const api = vi.mocked(profileApi);
 const mutate = vi.fn();
 

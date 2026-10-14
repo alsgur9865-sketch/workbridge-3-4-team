@@ -200,5 +200,24 @@ describe('ContractDetailPage', () => {
     expect(await screen.findByText(/계약이 체결되었습니다/)).toBeInTheDocument();
     expect(screen.getByText('계약 체결')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /전자서명하기/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '리뷰 작성하기' })).not.toBeInTheDocument();
+  });
+
+  it('offers the review once the project is completed', async () => {
+    signInAs(freelancerId, 'FREELANCER');
+    contracts.getContract.mockResolvedValue(
+      contract({
+        status: 'SIGNED',
+        clientSignedAt: '2026-10-12T00:00:00.000Z',
+        freelancerSignedAt: '2026-10-12T01:00:00.000Z',
+        projectTransactionStatus: 'COMPLETED',
+      }),
+    );
+    renderAt('/contracts/contract-1', routes);
+
+    expect(await screen.findByRole('link', { name: '리뷰 작성하기' })).toHaveAttribute(
+      'href',
+      '/contracts/contract-1/review',
+    );
   });
 });

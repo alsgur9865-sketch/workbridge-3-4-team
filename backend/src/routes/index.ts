@@ -6,6 +6,7 @@ import { contractRouter } from '@/routes/contract.routes';
 import { healthRouter } from '@/routes/health.routes';
 import { notificationRouter } from '@/routes/notification.routes';
 import { priceOfferRouter } from '@/routes/price-offer.routes';
+import { reviewRouter } from '@/routes/review.routes';
 import { userRouter } from '@/routes/user.routes';
 
 export const apiRouter = Router();
@@ -18,3 +19,4 @@ apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/contracts', contractRouter);
 apiRouter.use(applicationRouter);
 apiRouter.use(priceOfferRouter);
+apiRouter.use(reviewRouter);

@@ -42,6 +42,10 @@ const errorMessages: Record<string, string> = {
   INVALID_CONTRACT_PERIOD: '계약 종료일은 시작일보다 뒤여야 합니다.',
   ALREADY_SIGNED: '이미 서명한 계약서입니다.',
   CONTRACT_NOT_SIGNABLE: '더 이상 서명할 수 없는 계약서입니다.',
+  PROJECT_NOT_COMPLETED: '프로젝트가 완료된 뒤에 리뷰를 작성할 수 있습니다.',
+  CANNOT_REVIEW_SELF: '본인에게는 리뷰를 작성할 수 없습니다.',
+  ALREADY_REVIEWED: '이미 이 계약에 리뷰를 작성했습니다.',
+  USER_NOT_FOUND: '사용자를 찾을 수 없습니다.',
   VALIDATION_ERROR: '입력값을 다시 확인해 주세요.',
 };
 

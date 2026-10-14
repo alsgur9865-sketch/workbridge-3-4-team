@@ -21,6 +21,7 @@ export interface Contract {
   freelancerSignedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  projectTransactionStatus?: string;
 }
 
 export interface CreateContractInput {
