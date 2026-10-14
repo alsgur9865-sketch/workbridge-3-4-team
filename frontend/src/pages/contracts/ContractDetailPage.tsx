@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle2, Circle, PartyPopper, PenLine } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { formatDate, formatWon, getApplicationErrorMessage } from '@/features/applications/format';
@@ -82,8 +82,18 @@ function ContractDocument({
       {contract.status === 'SIGNED' ? (
         <p className="mt-6 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
           <PartyPopper className="size-4" aria-hidden="true" />
-          양측 서명이 완료되어 계약이 체결되었습니다. 다음 단계는 결제입니다.
+          양측 서명이 완료되어 계약이 체결되었습니다. 결제 완료 후 결과물을 제출하고 확인할 수
+          있습니다.
         </p>
+      ) : null}
+
+      {contract.status === 'SIGNED' ? (
+        <Link
+          to={`/contracts/${contract.id}/delivery`}
+          className="mt-4 inline-flex rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700"
+        >
+          결과물 제출 · 확인
+        </Link>
       ) : null}
 
       <article className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">

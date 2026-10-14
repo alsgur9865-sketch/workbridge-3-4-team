@@ -218,9 +218,11 @@ export async function completePayment(params: {
   });
 }
 
-
-export function findPaymentForSettlement(contractId: string) {
-  return getPrisma().payment.findUnique({
+export function findPaymentForSettlement(
+  contractId: string,
+  database: Prisma.TransactionClient = getPrisma(),
+) {
+  return database.payment.findUnique({
     where: { contractId },
     include: {
       contract: {
@@ -245,13 +247,16 @@ export function findPaymentForSettlement(contractId: string) {
   });
 }
 
-export async function releaseEscrowedPayment(params: {
-  paymentId: string;
-  contractId: string;
-}) {
+export async function releaseEscrowedPayment(
+  params: {
+    paymentId: string;
+    contractId: string;
+  },
+  database: Prisma.TransactionClient = getPrisma(),
+) {
   const { paymentId, contractId } = params;
 
-  const updated = await getPrisma().payment.updateMany({
+  const updated = await database.payment.updateMany({
     where: {
       id: paymentId,
       contractId,
@@ -264,7 +269,7 @@ export async function releaseEscrowedPayment(params: {
   });
 
   if (updated.count === 0) {
-    const current = await getPrisma().payment.findUnique({ where: { id: paymentId } });
+    const current = await database.payment.findUnique({ where: { id: paymentId } });
 
     if (current?.status === 'RELEASED') {
       return current;
@@ -277,5 +282,5 @@ export async function releaseEscrowedPayment(params: {
     );
   }
 
-  return getPrisma().payment.findUniqueOrThrow({ where: { id: paymentId } });
+  return database.payment.findUniqueOrThrow({ where: { id: paymentId } });
 }

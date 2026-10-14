@@ -10,6 +10,7 @@ import { RoleSelectionPage } from '@/pages/auth/RoleSelectionPage';
 import { SignupPage } from '@/pages/auth/SignupPage';
 import { ContractCreatePage } from '@/pages/contracts/ContractCreatePage';
 import { ContractDetailPage } from '@/pages/contracts/ContractDetailPage';
+import { DeliveryPage } from '@/pages/deliveries/DeliveryPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
@@ -46,6 +47,7 @@ export function App() {
         <Route path="applications/:applicationId/price" element={<PriceAgreementPage />} />
         <Route path="applications/:applicationId/contract/new" element={<ContractCreatePage />} />
         <Route path="contracts/:contractId" element={<ContractDetailPage />} />
+        <Route path="contracts/:contractId/delivery" element={<DeliveryPage />} />
         <Route path="payments/success" element={<PaymentSuccessPage />} />
         <Route path="payments/fail" element={<PaymentFailPage />} />
 

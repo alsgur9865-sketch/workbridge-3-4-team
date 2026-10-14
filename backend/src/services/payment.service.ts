@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { env } from '@/config/env';
 import { AppError } from '@/errors/AppError';
+import type { Prisma } from '@/generated/prisma/client';
 import { confirmTossPayment, TossPaymentApiError } from '@/lib/toss-payments';
 import * as paymentRepository from '@/repositories/payment.repository';
 import type { ConfirmPaymentInput } from '@/schemas/payment.schema';
@@ -45,8 +46,7 @@ function toPaymentDto(
     orderName: createOrderName(projectTitle),
     amount: Number(payment.amount),
     platformFee: payment.platformFee === null ? null : Number(payment.platformFee),
-    settlementAmount:
-      payment.settlementAmount === null ? null : Number(payment.settlementAmount),
+    settlementAmount: payment.settlementAmount === null ? null : Number(payment.settlementAmount),
     status: payment.status,
     paidAt: payment.paidAt,
     escrowedAt: payment.escrowedAt,
@@ -88,11 +88,7 @@ export async function preparePayment(user: AuthUser, contractId: string) {
   }
 
   if (contract.project.transactionStatus !== 'PAYMENT_PENDING') {
-    throw new AppError(
-      409,
-      'PAYMENT_STAGE_CLOSED',
-      'The project is not waiting for payment.',
-    );
+    throw new AppError(409, 'PAYMENT_STAGE_CLOSED', 'The project is not waiting for payment.');
   }
 
   const amount = Number(contract.agreedAmount);
@@ -176,11 +172,7 @@ export async function confirmPayment(user: AuthUser, input: ConfirmPaymentInput)
   }
 
   if (contract.status !== 'SIGNED' || contract.project.transactionStatus !== 'PAYMENT_PENDING') {
-    throw new AppError(
-      409,
-      'PAYMENT_STAGE_CLOSED',
-      'The project is not waiting for payment.',
-    );
+    throw new AppError(409, 'PAYMENT_STAGE_CLOSED', 'The project is not waiting for payment.');
   }
 
   if (!env.TOSS_SECRET_KEY) {
@@ -269,15 +261,19 @@ export async function getPayment(user: AuthUser, paymentId: string) {
   return toPaymentDto(payment, payment.contract.project.title);
 }
 
-
 /**
  * Marks the MVP settlement record as released after delivery approval.
  *
  * This does not transfer money through Toss Payments. It records WorkBridge's
  * internal escrow/settlement state after the delivery flow has completed.
  */
-export async function releasePaymentForContract(contractId: string) {
-  const payment = await paymentRepository.findPaymentForSettlement(contractId);
+export async function releasePaymentForContract(
+  contractId: string,
+  transaction?: Prisma.TransactionClient,
+) {
+  const payment = transaction
+    ? await paymentRepository.findPaymentForSettlement(contractId, transaction)
+    : await paymentRepository.findPaymentForSettlement(contractId);
 
   if (!payment || payment.contract.project.deletedAt) {
     throw new AppError(404, 'PAYMENT_NOT_FOUND', 'The payment does not exist.');
@@ -288,11 +284,7 @@ export async function releasePaymentForContract(contractId: string) {
   }
 
   if (payment.status !== 'ESCROWED') {
-    throw new AppError(
-      409,
-      'PAYMENT_NOT_ESCROWED',
-      'Only an escrowed payment can be released.',
-    );
+    throw new AppError(409, 'PAYMENT_NOT_ESCROWED', 'Only an escrowed payment can be released.');
   }
 
   if (!payment.contract.delivery || payment.contract.delivery.status !== 'APPROVED') {
@@ -311,10 +303,10 @@ export async function releasePaymentForContract(contractId: string) {
     );
   }
 
-  const released = await paymentRepository.releaseEscrowedPayment({
-    paymentId: payment.id,
-    contractId,
-  });
+  const settlementInput = { paymentId: payment.id, contractId };
+  const released = transaction
+    ? await paymentRepository.releaseEscrowedPayment(settlementInput, transaction)
+    : await paymentRepository.releaseEscrowedPayment(settlementInput);
 
   return toPaymentDto(released, payment.contract.project.title);
 }
