@@ -61,6 +61,16 @@ export function PaymentSuccessPage() {
   }
 
   const payment = confirmMutation.data;
+  if (!payment) {
+    return (
+      <section className="mx-auto max-w-xl px-5 py-24 text-center">
+        <LoaderCircle className="mx-auto size-9 animate-spin text-brand-600" aria-hidden="true" />
+        <h1 className="mt-5 text-2xl font-bold">결제를 확인하고 있습니다</h1>
+        <p className="mt-2 text-sm text-slate-500">창을 닫지 말고 잠시 기다려 주세요.</p>
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto max-w-xl px-5 py-20">
       <div className="rounded-2xl border border-emerald-200 bg-white p-8 text-center shadow-sm">
