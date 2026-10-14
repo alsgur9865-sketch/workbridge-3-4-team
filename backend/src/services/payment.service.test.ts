@@ -43,11 +43,13 @@ function paymentRecord(overrides: Record<string, unknown> = {}) {
   } as never;
 }
 
-function settlementContext(overrides: {
-  payment?: Record<string, unknown>;
-  project?: Record<string, unknown>;
-  delivery?: Record<string, unknown> | null;
-} = {}) {
+function settlementContext(
+  overrides: {
+    payment?: Record<string, unknown>;
+    project?: Record<string, unknown>;
+    delivery?: Record<string, unknown> | null;
+  } = {},
+) {
   return {
     ...(paymentRecord(overrides.payment) as unknown as Record<string, unknown>),
     contract: {
@@ -97,6 +99,25 @@ describe('releasePaymentForContract', () => {
       platformFee: 100_000,
       settlementAmount: 900_000,
     });
+  });
+
+  it('uses the delivery approval transaction for settlement reads and writes', async () => {
+    const transaction = { payment: {} } as never;
+    repository.findPaymentForSettlement.mockResolvedValue(settlementContext());
+    repository.releaseEscrowedPayment.mockResolvedValue(
+      paymentRecord({
+        status: 'RELEASED',
+        releasedAt: new Date('2026-10-14T02:00:00.000Z'),
+      }),
+    );
+
+    await releasePaymentForContract(contractId, transaction);
+
+    expect(repository.findPaymentForSettlement).toHaveBeenCalledWith(contractId, transaction);
+    expect(repository.releaseEscrowedPayment).toHaveBeenCalledWith(
+      { paymentId, contractId },
+      transaction,
+    );
   });
 
   it('is idempotent when settlement is already released', async () => {
