@@ -198,6 +198,10 @@ describe('ContractDetailPage', () => {
     renderAt('/contracts/contract-1', routes);
 
     expect(await screen.findByText(/계약이 체결되었습니다/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '결과물 제출 · 확인' })).toHaveAttribute(
+      'href',
+      '/contracts/contract-1/delivery',
+    );
     expect(screen.getByText('계약 체결')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /전자서명하기/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '리뷰 작성하기' })).not.toBeInTheDocument();

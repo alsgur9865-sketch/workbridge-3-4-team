@@ -58,6 +58,21 @@ Base URL: `/api/v1`
 - The frontend refreshes project reads every 30 seconds and after bookmark/application changes. Project query caches are separated by user ID.
 - `/projects?bookmarkedOnly=true` opens the saved-project view, initially including all recruitment states.
 
+## Deliveries (Sprint 3 B)
+
+| Method | Path                                           | Access                                                     |
+| ------ | ---------------------------------------------- | ---------------------------------------------------------- |
+| GET    | `/contracts/:contractId/delivery`              | Authenticated contract parties                             |
+| POST   | `/contracts/:contractId/delivery`              | Contract FREELANCER, signed/paid/in progress               |
+| POST   | `/contracts/:contractId/delivery/upload-url`   | Contract FREELANCER before final submission                |
+| POST   | `/contracts/:contractId/delivery/download-url` | Contract parties, submitted attachments only               |
+| PATCH  | `/deliveries/:deliveryId/approve`              | Contract CLIENT; approves delivery and releases settlement |
+
+- Final submission is unique per contract; text/link-only submission does not need Storage credentials.
+- Attachments use private Supabase object paths, not public URLs. Uploads require a bucket limit of 10 MiB or less. At most five files may be submitted.
+- Approval updates Delivery, Project, Payment, and completion/review notifications in one database transaction. A failed settlement rolls back the entire approval.
+- [Delivery setup, payloads, error cases, and A/C integration contract](./DELIVERIES.md).
+
 ## Planned groups
 
 - `/users`
@@ -65,7 +80,6 @@ Base URL: `/api/v1`
 - `/notifications`
 - `/contracts`
 - `/payments`
-- `/deliveries`
 - `/reviews`
 
 Swagger UI is available at `/api-docs` while the backend is running.

@@ -7,6 +7,7 @@ import { formatDate, formatWon, getApplicationErrorMessage } from '@/features/ap
 import { ContractStatusBadge } from '@/features/contracts/components/ContractStatusBadge';
 import { useContract, useSignContract } from '@/features/contracts/hooks';
 import type { Contract } from '@/features/contracts/types';
+import { PaymentAction } from '@/features/payments/components/PaymentAction';
 import { useAuthStore } from '@/stores/auth.store';
 
 const dateTimeFormatter = new Intl.DateTimeFormat('ko-KR', {
@@ -44,13 +45,19 @@ export function ContractDetailPage() {
     );
   }
 
-  return <ContractDocument contract={contractQuery.data} userId={user.id} />;
+  return <ContractDocument contract={contractQuery.data} user={user} />;
 }
 
-function ContractDocument({ contract, userId }: { contract: Contract; userId: string }) {
+function ContractDocument({
+  contract,
+  user,
+}: {
+  contract: Contract;
+  user: { id: string; email: string; name: string | null; role: 'CLIENT' | 'FREELANCER' | null };
+}) {
   const signMutation = useSignContract(contract.id);
   const [agreed, setAgreed] = useState(false);
-  const isClient = contract.clientId === userId;
+  const isClient = contract.clientId === user.id;
   const mySignedAt = isClient ? contract.clientSignedAt : contract.freelancerSignedAt;
   const canSign = !mySignedAt && contract.status !== 'SIGNED' && contract.status !== 'CANCELLED';
   const content = contract.content;
@@ -88,8 +95,18 @@ function ContractDocument({ contract, userId }: { contract: Contract; userId: st
       ) : contract.status === 'SIGNED' ? (
         <p className="mt-6 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
           <PartyPopper className="size-4" aria-hidden="true" />
-          양측 서명이 완료되어 계약이 체결되었습니다. 다음 단계는 결제입니다.
+          양측 서명이 완료되어 계약이 체결되었습니다. 결제 완료 후 결과물을 제출하고 확인할 수
+          있습니다.
         </p>
+      ) : null}
+
+      {contract.status === 'SIGNED' ? (
+        <Link
+          to={`/contracts/${contract.id}/delivery`}
+          className="mt-4 inline-flex rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700"
+        >
+          결과물 제출 · 확인
+        </Link>
       ) : null}
 
       <article className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
@@ -173,6 +190,10 @@ function ContractDocument({ contract, userId }: { contract: Contract; userId: st
         <p className="mt-6 rounded-xl bg-white px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
           서명을 완료했습니다. 상대방의 서명을 기다리고 있습니다.
         </p>
+      ) : null}
+
+      {contract.status === 'SIGNED' ? (
+        <PaymentAction contract={contract} user={user} isClient={isClient} />
       ) : null}
     </section>
   );
