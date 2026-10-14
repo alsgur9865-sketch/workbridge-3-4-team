@@ -92,7 +92,7 @@ function contractForPayment(overrides: Record<string, unknown> = {}) {
 
 function paymentDetail(overrides: Record<string, unknown> = {}) {
   return {
-    ...paymentRecord(overrides),
+    ...(paymentRecord(overrides) as unknown as Record<string, unknown>),
     contract: {
       id: contractId,
       status: 'SIGNED',
