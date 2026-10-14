@@ -1,13 +1,41 @@
-import { BriefcaseBusiness, ChevronRight } from 'lucide-react';
-import { Link, Outlet } from 'react-router-dom';
+import { Bell, BriefcaseBusiness, ChevronRight, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { logout } from '@/features/auth/api';
+import { useUnreadNotificationCount } from '@/features/notifications/api';
+import { useAuthStore } from '@/stores/auth.store';
 
 const navigation = [
-  { label: '프로젝트 찾기', href: '/#projects' },
+  { label: '프로젝트 찾기', href: '/projects' },
   { label: '이용 방법', href: '/#how-it-works' },
   { label: 'AI 견적 분석', href: '/#ai-estimate' },
 ];
 
 export function AppLayout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const unreadCountQuery = useUnreadNotificationCount();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  if (user && user.role === null && location.pathname !== '/select-role') {
+    return <Navigate to="/select-role" replace />;
+  }
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } finally {
+      clearSession();
+      setIsLoggingOut(false);
+      navigate('/');
+    }
+  }
+
+  const unreadCount = unreadCountQuery.data ?? 0;
+
   return (
     <div className="min-h-screen bg-white text-slate-950">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur">
@@ -28,21 +56,60 @@ export function AppLayout() {
                 {item.label}
               </a>
             ))}
+            {user && (
+              <Link className="hover:text-brand-700" to="/projects?bookmarkedOnly=true">
+                내 북마크
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              className="hidden px-3 py-2 text-sm font-semibold text-slate-700 transition hover:text-brand-700 sm:inline-flex"
-              to="/login"
-            >
-              로그인
-            </Link>
-            <Link
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-              to="/signup"
-            >
-              무료로 시작하기
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  className="relative inline-flex size-10 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-100"
+                  to="/notifications"
+                  aria-label={unreadCount > 0 ? `알림 ${unreadCount}개 안 읽음` : '알림'}
+                >
+                  <Bell className="size-4" aria-hidden="true" />
+                  {unreadCount > 0 ? (
+                    <span className="absolute -right-1.5 -top-1.5 flex min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[10px] font-black leading-4 text-white">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  ) : null}
+                </Link>
+                <Link
+                  className="hidden max-w-40 truncate text-sm font-semibold text-slate-700 hover:text-brand-700 sm:inline"
+                  to="/profile"
+                >
+                  {user.name ?? user.email}
+                </Link>
+                <button
+                  type="button"
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
+                  <LogOut className="size-4" aria-hidden="true" />
+                  {isLoggingOut ? '로그아웃 중' : '로그아웃'}
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  className="hidden px-3 py-2 text-sm font-semibold text-slate-700 transition hover:text-brand-700 sm:inline-flex"
+                  to="/login"
+                >
+                  로그인
+                </Link>
+                <Link
+                  className="inline-flex h-10 items-center justify-center rounded-xl bg-brand-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                  to="/signup"
+                >
+                  무료로 시작하기
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -87,9 +154,21 @@ export function AppLayout() {
                 <Link className="hover:text-white" to="/signup">
                   회원가입
                 </Link>
-                <Link className="hover:text-white" to="/projects/new">
-                  프로젝트 등록
-                </Link>
+                {user ? (
+                  <>
+                    <Link className="hover:text-white" to="/profile">
+                      내 프로필
+                    </Link>
+                    <Link className="hover:text-white" to="/notifications">
+                      알림
+                    </Link>
+                  </>
+                ) : null}
+                {user?.role === 'CLIENT' && (
+                  <Link className="hover:text-white" to="/projects/new">
+                    프로젝트 등록
+                  </Link>
+                )}
                 <Link className="inline-flex items-center gap-1 hover:text-white" to="/login">
                   로그인 <ChevronRight className="size-4" aria-hidden="true" />
                 </Link>

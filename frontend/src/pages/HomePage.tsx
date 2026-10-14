@@ -1,12 +1,11 @@
 import { useState } from 'react';
+import { useAuthStore } from '@/stores/auth.store';
 import {
   ArrowRight,
   BriefcaseBusiness,
-  CalendarDays,
   Check,
   ChevronRight,
   CircleDollarSign,
-  Clock3,
   Handshake,
   Search,
   ShieldCheck,
@@ -15,50 +14,8 @@ import {
   Users,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-interface FeaturedProject {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  budget: number;
-  duration: string;
-  deadline: string;
-  skills: string[];
-}
-
-const featuredProjects: FeaturedProject[] = [
-  {
-    id: 'matching-dashboard',
-    title: '프리랜서 매칭 대시보드 구축',
-    description: '의뢰인과 프리랜서가 프로젝트 진행 상황을 한눈에 관리하는 반응형 대시보드',
-    category: '웹 개발',
-    budget: 5_000_000,
-    duration: '약 6주',
-    deadline: 'D-10',
-    skills: ['React', 'TypeScript', 'Node.js'],
-  },
-  {
-    id: 'b2b-landing-page',
-    title: 'B2B 랜딩 페이지 리디자인',
-    description: '서비스 핵심 가치를 명확하게 전달하는 정보 구조와 반응형 랜딩 페이지 개선',
-    category: '디자인',
-    budget: 2_200_000,
-    duration: '약 3주',
-    deadline: 'D-8',
-    skills: ['Figma', 'React', 'UI/UX'],
-  },
-  {
-    id: 'reservation-web-app',
-    title: '소상공인 예약 관리 웹앱 개발',
-    description: '모바일 예약 접수와 일정 관리를 지원하는 관리자 중심의 웹 애플리케이션',
-    category: '웹 개발',
-    budget: 3_800_000,
-    duration: '약 5주',
-    deadline: 'D-14',
-    skills: ['React', 'Express', 'PostgreSQL'],
-  },
-];
+import { ProjectCard } from '@/features/projects/ProjectCard';
+import { useProjects } from '@/features/projects/projects.api';
 
 const workflowSteps = ['프로젝트 등록', '지원자 선택', '계약 · 안전결제', '작업 · 납품'];
 
@@ -103,24 +60,17 @@ const journeys = [
   },
 ];
 
-const currencyFormatter = new Intl.NumberFormat('ko-KR');
-
 export function HomePage() {
+  const user = useAuthStore((state) => state.user);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('전체');
-
-  const normalizedSearch = searchTerm.trim().toLowerCase();
-  const filteredProjects = featuredProjects.filter((project) => {
-    const matchesCategory = selectedCategory === '전체' || project.category === selectedCategory;
-    const matchesSearch =
-      normalizedSearch.length === 0 ||
-      [project.title, project.description, ...project.skills]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalizedSearch);
-
-    return matchesCategory && matchesSearch;
+  const projectsQuery = useProjects({
+    limit: 3,
+    search: searchTerm.trim() || undefined,
+    category: selectedCategory === '전체' ? undefined : selectedCategory,
+    status: 'OPEN',
   });
+  const projects = projectsQuery.data?.data ?? [];
 
   return (
     <div className="overflow-hidden bg-white">
@@ -152,12 +102,14 @@ export function HomePage() {
                 프로젝트 찾기
                 <ArrowRight className="size-4" aria-hidden="true" />
               </a>
-              <Link
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
-                to="/projects/new"
-              >
-                프로젝트 등록하기
-              </Link>
+              {user?.role === 'CLIENT' && (
+                <Link
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 text-base font-bold text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2"
+                  to="/projects/new"
+                >
+                  프로젝트 등록하기
+                </Link>
+              )}
             </div>
 
             <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-semibold text-slate-600">
@@ -277,27 +229,44 @@ export function HomePage() {
               onChange={(event) => setSelectedCategory(event.target.value)}
               value={selectedCategory}
             >
-              <option>전체</option>
-              <option>웹 개발</option>
-              <option>디자인</option>
+              <option value="전체">전체</option>
+              <option value="Web Development">웹 개발</option>
+              <option value="Design">디자인</option>
             </select>
           </label>
         </div>
 
         <p className="mt-5 text-sm font-semibold text-slate-500" aria-live="polite">
-          샘플 프로젝트 {filteredProjects.length}개
+          프로젝트 {projectsQuery.data?.meta.total ?? 0}개
         </p>
 
-        {filteredProjects.length > 0 ? (
+        {projectsQuery.isPending ? (
+          <div className="mt-4 grid gap-5 lg:grid-cols-3" aria-label="프로젝트 불러오는 중">
+            {[1, 2, 3].map((item) => (
+              <div className="h-80 animate-pulse rounded-2xl bg-slate-200" key={item} />
+            ))}
+          </div>
+        ) : projectsQuery.isError ? (
+          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-6 py-14 text-center">
+            <p className="font-bold text-rose-800">프로젝트를 불러오지 못했습니다.</p>
+            <button
+              className="mt-3 text-sm font-bold text-rose-700 hover:underline"
+              onClick={() => void projectsQuery.refetch()}
+              type="button"
+            >
+              다시 시도
+            </button>
+          </div>
+        ) : projects.length > 0 ? (
           <div className="mt-4 grid gap-5 lg:grid-cols-3">
-            {filteredProjects.map((project) => (
+            {projects.map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
         ) : (
           <div className="mt-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-14 text-center">
             <Search className="mx-auto size-8 text-slate-400" aria-hidden="true" />
-            <p className="mt-4 font-bold text-slate-800">조건에 맞는 샘플 프로젝트가 없습니다.</p>
+            <p className="mt-4 font-bold text-slate-800">조건에 맞는 프로젝트가 없습니다.</p>
             <button
               className="mt-3 text-sm font-bold text-brand-700 hover:underline"
               onClick={() => {
@@ -327,9 +296,11 @@ export function HomePage() {
           </div>
 
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            {journeys.map((journey) => (
-              <JourneyCard journey={journey} key={journey.eyebrow} />
-            ))}
+            {journeys
+              .filter((journey) => journey.to !== '/projects/new' || user?.role === 'CLIENT')
+              .map((journey) => (
+                <JourneyCard journey={journey} key={journey.eyebrow} />
+              ))}
           </div>
         </div>
       </section>
@@ -376,14 +347,14 @@ export function HomePage() {
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-brand-100">
                 <Sparkles className="size-4" aria-hidden="true" />
-                AI 가격 분석 · 2차 스프린트 예정
+                AI 가격 분석
               </span>
               <h2 className="mt-5 text-3xl font-black tracking-tight sm:text-4xl">
                 프로젝트 예산이 고민되시나요?
               </h2>
               <p className="mt-4 max-w-2xl leading-7 text-slate-300">
-                프로젝트 설명과 기간, 필요한 기술을 바탕으로 적정 예상 금액의 범위를 분석하는 기능을
-                준비하고 있습니다.
+                프로젝트 설명과 기간, 필요한 기술을 바탕으로 적정 예상 금액의 범위와 판단 근거를
+                확인해 보세요.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur">
@@ -391,7 +362,13 @@ export function HomePage() {
                 <CircleDollarSign className="size-6 text-brand-300" aria-hidden="true" />
                 <div>
                   <p className="text-sm font-bold text-slate-300">AI 예상 견적</p>
-                  <p className="text-lg font-black">기능 준비 중</p>
+                  <Link
+                    className="mt-1 inline-flex items-center gap-1 text-lg font-black text-white hover:text-brand-200"
+                    to="/projects/price-estimate"
+                  >
+                    AI 견적 받아보기
+                    <ArrowRight className="size-4" aria-hidden="true" />
+                  </Link>
                 </div>
               </div>
             </div>
@@ -426,65 +403,6 @@ export function HomePage() {
         </div>
       </section>
     </div>
-  );
-}
-
-function ProjectCard({ project }: { project: FeaturedProject }) {
-  return (
-    <article className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl hover:shadow-slate-200/70">
-      <div className="flex items-center justify-between gap-3">
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-          모집 중
-        </span>
-        <span className="text-xs font-bold text-slate-500">{project.category}</span>
-      </div>
-
-      <h3 className="mt-5 text-xl font-black leading-7 text-slate-950 transition group-hover:text-brand-700">
-        {project.title}
-      </h3>
-      <p className="mt-3 text-sm leading-6 text-slate-600">{project.description}</p>
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        {project.skills.map((skill) => (
-          <span
-            className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600"
-            key={skill}
-          >
-            {skill}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-6 grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 text-sm">
-        <div>
-          <p className="text-xs font-semibold text-slate-400">예상 예산</p>
-          <p className="mt-1 font-black text-slate-900">
-            {currencyFormatter.format(project.budget)}원
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold text-slate-400">작업 기간</p>
-          <p className="mt-1 flex items-center gap-1.5 font-bold text-slate-700">
-            <Clock3 className="size-4 text-slate-400" aria-hidden="true" />
-            {project.duration}
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-5 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600">
-          <CalendarDays className="size-4" aria-hidden="true" />
-          모집 마감 {project.deadline}
-        </span>
-        <Link
-          className="inline-flex items-center gap-1 text-sm font-black text-brand-700"
-          to={`/projects/${project.id}`}
-        >
-          자세히 보기
-          <ChevronRight className="size-4" aria-hidden="true" />
-        </Link>
-      </div>
-    </article>
   );
 }
 
