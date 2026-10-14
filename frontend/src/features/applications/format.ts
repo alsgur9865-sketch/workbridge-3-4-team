@@ -42,6 +42,17 @@ const errorMessages: Record<string, string> = {
   INVALID_CONTRACT_PERIOD: '계약 종료일은 시작일보다 뒤여야 합니다.',
   ALREADY_SIGNED: '이미 서명한 계약서입니다.',
   CONTRACT_NOT_SIGNABLE: '더 이상 서명할 수 없는 계약서입니다.',
+  CONTRACT_NOT_SIGNED: '양측 전자서명이 완료된 뒤 결제할 수 있습니다.',
+  PAYMENT_STAGE_CLOSED: '현재 결제를 진행할 수 있는 단계가 아닙니다.',
+  PAYMENT_ALREADY_PROCESSED: '이미 처리된 결제가 있습니다.',
+  INVALID_PAYMENT_AMOUNT: '결제 금액을 확인할 수 없습니다.',
+  PAYMENT_AMOUNT_MISMATCH: '결제 금액이 계약 금액과 일치하지 않습니다.',
+  PAYMENT_NOT_FOUND: '결제 정보를 찾을 수 없습니다.',
+  PAYMENT_NOT_CONFIRMABLE: '이 결제는 더 이상 승인할 수 없습니다.',
+  TOSS_NOT_CONFIGURED: '결제 서버 설정이 완료되지 않았습니다.',
+  TOSS_PAYMENT_UNAVAILABLE: '토스페이먼츠에 일시적으로 연결할 수 없습니다.',
+  TOSS_PAYMENT_REJECTED: '결제가 승인되지 않았습니다. 결제수단을 확인해 주세요.',
+  TOSS_RESPONSE_MISMATCH: '결제 승인 정보를 검증하지 못했습니다.',
   VALIDATION_ERROR: '입력값을 다시 확인해 주세요.',
 };
 
