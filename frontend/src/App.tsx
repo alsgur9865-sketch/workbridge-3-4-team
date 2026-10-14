@@ -13,6 +13,8 @@ import { ContractDetailPage } from '@/pages/contracts/ContractDetailPage';
 import { HomePage } from '@/pages/HomePage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { NotificationsPage } from '@/pages/NotificationsPage';
+import { PaymentFailPage } from '@/pages/payments/PaymentFailPage';
+import { PaymentSuccessPage } from '@/pages/payments/PaymentSuccessPage';
 import { PriceEstimatePage } from '@/pages/PriceEstimatePage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { ProjectDetailPage } from '@/pages/ProjectDetailPage';
@@ -44,6 +46,8 @@ export function App() {
         <Route path="applications/:applicationId/price" element={<PriceAgreementPage />} />
         <Route path="applications/:applicationId/contract/new" element={<ContractCreatePage />} />
         <Route path="contracts/:contractId" element={<ContractDetailPage />} />
+        <Route path="payments/success" element={<PaymentSuccessPage />} />
+        <Route path="payments/fail" element={<PaymentFailPage />} />
 
         <Route path="*" element={<NotFoundPage />} />
       </Route>

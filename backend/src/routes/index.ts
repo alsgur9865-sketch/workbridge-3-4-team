@@ -5,6 +5,7 @@ import { authRouter } from '@/routes/auth.routes';
 import { contractRouter } from '@/routes/contract.routes';
 import { healthRouter } from '@/routes/health.routes';
 import { notificationRouter } from '@/routes/notification.routes';
+import { paymentRouter } from '@/routes/payment.routes';
 import { priceOfferRouter } from '@/routes/price-offer.routes';
 import { userRouter } from '@/routes/user.routes';
 
@@ -18,3 +19,4 @@ apiRouter.use('/notifications', notificationRouter);
 apiRouter.use('/contracts', contractRouter);
 apiRouter.use(applicationRouter);
 apiRouter.use(priceOfferRouter);
+apiRouter.use(paymentRouter);
