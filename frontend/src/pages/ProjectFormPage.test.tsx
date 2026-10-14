@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth.store';
 const createProject = vi.hoisted(() => vi.fn());
 
 vi.mock('@/features/projects/projects.api', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/features/projects/projects.api'])>()),
+  ...(await importOriginal<typeof import('@/features/projects/projects.api')>()),
   useProject: () => ({ data: undefined, isPending: false, isError: false }),
   useCreateProject: () => ({ mutateAsync: createProject, isPending: false, isError: false }),
   useUpdateProject: () => ({ mutateAsync: vi.fn(), isPending: false, isError: false }),
