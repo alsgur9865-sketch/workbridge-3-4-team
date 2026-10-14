@@ -217,3 +217,65 @@ export async function completePayment(params: {
     return payment;
   });
 }
+
+
+export function findPaymentForSettlement(contractId: string) {
+  return getPrisma().payment.findUnique({
+    where: { contractId },
+    include: {
+      contract: {
+        include: {
+          project: {
+            select: {
+              id: true,
+              title: true,
+              transactionStatus: true,
+              deletedAt: true,
+            },
+          },
+          delivery: {
+            select: {
+              status: true,
+              approvedAt: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function releaseEscrowedPayment(params: {
+  paymentId: string;
+  contractId: string;
+}) {
+  const { paymentId, contractId } = params;
+
+  const updated = await getPrisma().payment.updateMany({
+    where: {
+      id: paymentId,
+      contractId,
+      status: 'ESCROWED',
+    },
+    data: {
+      status: 'RELEASED',
+      releasedAt: new Date(),
+    },
+  });
+
+  if (updated.count === 0) {
+    const current = await getPrisma().payment.findUnique({ where: { id: paymentId } });
+
+    if (current?.status === 'RELEASED') {
+      return current;
+    }
+
+    throw new AppError(
+      409,
+      'PAYMENT_NOT_RELEASABLE',
+      'The escrowed payment can no longer be released.',
+    );
+  }
+
+  return getPrisma().payment.findUniqueOrThrow({ where: { id: paymentId } });
+}

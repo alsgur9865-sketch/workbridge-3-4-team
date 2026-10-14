@@ -268,3 +268,53 @@ export async function getPayment(user: AuthUser, paymentId: string) {
 
   return toPaymentDto(payment, payment.contract.project.title);
 }
+
+
+/**
+ * Marks the MVP settlement record as released after delivery approval.
+ *
+ * This does not transfer money through Toss Payments. It records WorkBridge's
+ * internal escrow/settlement state after the delivery flow has completed.
+ */
+export async function releasePaymentForContract(contractId: string) {
+  const payment = await paymentRepository.findPaymentForSettlement(contractId);
+
+  if (!payment || payment.contract.project.deletedAt) {
+    throw new AppError(404, 'PAYMENT_NOT_FOUND', 'The payment does not exist.');
+  }
+
+  if (payment.status === 'RELEASED') {
+    return toPaymentDto(payment, payment.contract.project.title);
+  }
+
+  if (payment.status !== 'ESCROWED') {
+    throw new AppError(
+      409,
+      'PAYMENT_NOT_ESCROWED',
+      'Only an escrowed payment can be released.',
+    );
+  }
+
+  if (!payment.contract.delivery || payment.contract.delivery.status !== 'APPROVED') {
+    throw new AppError(
+      409,
+      'DELIVERY_NOT_APPROVED',
+      'The delivery must be approved before settlement.',
+    );
+  }
+
+  if (payment.contract.project.transactionStatus !== 'COMPLETED') {
+    throw new AppError(
+      409,
+      'PROJECT_NOT_COMPLETED',
+      'The project must be completed before settlement.',
+    );
+  }
+
+  const released = await paymentRepository.releaseEscrowedPayment({
+    paymentId: payment.id,
+    contractId,
+  });
+
+  return toPaymentDto(released, payment.contract.project.title);
+}
