@@ -44,3 +44,21 @@ export interface CreateReviewInput {
   content: string;
   tags: ReviewTag[];
 }
+
+export interface ReviewHighlights {
+  averageRating: number | null;
+  reviewCount: number;
+  completedProjectCount: number;
+  includesDemoData: boolean;
+  hasOnlyDemoReviews: boolean;
+  reviews: Array<{
+    id: string;
+    rating: number;
+    content: string;
+    tags: string[];
+    reviewerRole: 'CLIENT' | 'FREELANCER' | null;
+    project: { id: string; title: string };
+    createdAt: string;
+    isDemo: boolean;
+  }>;
+}

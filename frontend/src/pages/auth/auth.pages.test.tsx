@@ -73,6 +73,39 @@ describe('LoginPage', () => {
     expect(screen.getByText('비밀번호를 입력해 주세요.')).toBeInTheDocument();
     expect(api.login).not.toHaveBeenCalled();
   });
+
+  it('returns a signed-in user to the feature that requested login', async () => {
+    api.login.mockResolvedValue({
+      accessToken: 'access-token',
+      user: { ...user, role: 'CLIENT' },
+    });
+
+    render(
+      <MemoryRouter
+        initialEntries={[
+          {
+            pathname: '/login',
+            state: { returnTo: '/projects/price-estimate' },
+          },
+        ]}
+      >
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/projects/price-estimate" element={<p>AI 견적 화면</p>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText('이메일'), {
+      target: { value: 'min@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('비밀번호'), {
+      target: { value: 'password123' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '로그인' }));
+
+    expect(await screen.findByText('AI 견적 화면')).toBeInTheDocument();
+  });
 });
 
 describe('SignupPage', () => {

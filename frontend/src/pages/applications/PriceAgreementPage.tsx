@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, Check, CircleDollarSign, FileSignature, Handshake, X } from 'lucide-react';
+import { Check, CircleDollarSign, FileSignature, Handshake, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useParams } from 'react-router-dom';
 import { z } from 'zod';
+import { WorkflowBackLink, WorkflowPageFrame } from '@/components/WorkflowPageFrame';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { PriceOfferStatusBadge } from '@/features/applications/components/PriceOfferStatusBadge';
@@ -71,19 +72,22 @@ export function PriceAgreementPage() {
   const agreed = application.priceOfferStatus === 'ACCEPTED';
 
   return (
-    <section className="mx-auto max-w-3xl px-5 py-12 sm:px-6">
-      <Link
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-brand-700"
+    <WorkflowPageFrame>
+      <WorkflowBackLink
         to={isClient ? `/projects/${application.project.id}/applications` : '/applications/me'}
       >
-        <ArrowLeft className="size-4" aria-hidden="true" />
         {isClient ? '지원자 목록으로' : '내 지원 현황으로'}
-      </Link>
+      </WorkflowBackLink>
 
-      <p className="mt-6 text-sm font-semibold text-brand-600">금액 협의</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">{application.project.title}</h1>
+      <p className="mt-8 text-sm font-bold text-[#0071e3]">금액 협의</p>
+      <h1 className="mt-2 text-4xl font-black tracking-[-0.035em] sm:text-5xl">
+        {application.project.title}
+      </h1>
 
-      <ol className="mt-6 flex items-center gap-2 text-xs font-bold" aria-label="진행 단계">
+      <ol
+        className="mt-8 flex flex-wrap items-center gap-2 rounded-[1.5rem] border border-black/5 bg-white/80 p-3 text-xs font-bold shadow-[0_16px_45px_rgba(15,23,42,0.06)] backdrop-blur-xl sm:flex-nowrap"
+        aria-label="진행 단계"
+      >
         {steps.map((step, index) => {
           const done = index === 0 || (index === 1 && agreed);
           const current = (index === 1 && !agreed) || (index === 2 && agreed);
@@ -92,10 +96,10 @@ export function PriceAgreementPage() {
               <span
                 className={
                   done
-                    ? 'rounded-full bg-brand-600 px-3 py-1 text-white'
+                    ? 'rounded-full bg-[#0071e3] px-3 py-2 text-white'
                     : current
-                      ? 'rounded-full bg-brand-50 px-3 py-1 text-brand-700 ring-1 ring-brand-200'
-                      : 'rounded-full bg-slate-100 px-3 py-1 text-slate-400'
+                      ? 'rounded-full bg-blue-50 px-3 py-2 text-[#0071e3] ring-1 ring-blue-100'
+                      : 'rounded-full bg-[#f5f5f7] px-3 py-2 text-[#86868b]'
                 }
                 aria-current={current ? 'step' : undefined}
               >
@@ -107,7 +111,7 @@ export function PriceAgreementPage() {
         })}
       </ol>
 
-      <dl className="mt-8 grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 text-sm shadow-sm sm:grid-cols-2">
+      <dl className="mt-6 grid gap-6 rounded-[2rem] border border-black/5 bg-white p-6 text-sm shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:grid-cols-2 sm:p-8">
         <div>
           <dt className="text-slate-500">{isClient ? '선정한 프리랜서' : '프로젝트 의뢰인'}</dt>
           <dd className="mt-1 font-semibold">
@@ -131,10 +135,10 @@ export function PriceAgreementPage() {
         </div>
       </dl>
 
-      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+      <div className="mt-6 rounded-[2rem] bg-[#1d1d1f] p-6 text-white shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:p-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-bold">
-            <CircleDollarSign className="size-5 text-brand-600" aria-hidden="true" />
+            <CircleDollarSign className="size-5 text-blue-400" aria-hidden="true" />
             최종 금액 제안
           </h2>
           <PriceOfferStatusBadge status={application.priceOfferStatus} />
@@ -144,26 +148,26 @@ export function PriceAgreementPage() {
             {formatWon(application.clientOfferAmount)}
           </p>
         ) : (
-          <p className="mt-4 text-slate-500">아직 제안된 금액이 없습니다.</p>
+          <p className="mt-4 text-[#a1a1a6]">아직 제안된 금액이 없습니다.</p>
         )}
         {application.offeredAt ? (
-          <p className="mt-1 text-xs text-slate-500">{formatDate(application.offeredAt)} 제안</p>
+          <p className="mt-1 text-xs text-[#a1a1a6]">{formatDate(application.offeredAt)} 제안</p>
         ) : null}
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.07)] sm:p-8">
         {isClient ? (
           <ClientActions application={application} />
         ) : (
           <FreelancerActions application={application} />
         )}
       </div>
-    </section>
+    </WorkflowPageFrame>
   );
 }
 
 const contractLinkClassName =
-  'inline-flex h-10 items-center justify-center gap-1.5 rounded-md bg-brand-600 px-4 text-sm font-medium text-white hover:bg-brand-700';
+  'inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-[#0071e3] px-5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#0077ed]';
 
 function AgreedNotice({
   application,
@@ -176,7 +180,7 @@ function AgreedNotice({
 
   return (
     <div className="grid gap-4">
-      <p className="flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+      <p className="flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
         <Handshake className="size-4" aria-hidden="true" />
         최종 금액이 확정되었습니다. 다음 단계는 계약서 작성입니다.
       </p>
@@ -203,11 +207,7 @@ function AgreedNotice({
 }
 
 function InfoNotice({ children }: { children: string }) {
-  return (
-    <p className="rounded-xl bg-white px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
-      {children}
-    </p>
-  );
+  return <p className="rounded-2xl bg-[#f5f5f7] px-4 py-3 text-sm text-slate-600">{children}</p>;
 }
 
 function ClientActions({ application }: { application: ApplicationDetail }) {
@@ -259,7 +259,7 @@ function ClientActions({ application }: { application: ApplicationDetail }) {
           inputMode="numeric"
           min={1}
           placeholder={String(application.proposedAmount)}
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f5f5f7] px-4 py-3.5 text-sm outline-none transition focus:border-[#0071e3] focus:bg-white focus:ring-4 focus:ring-blue-100"
           aria-invalid={Boolean(errors.amount)}
           {...register('amount', { valueAsNumber: true })}
         />
@@ -273,7 +273,11 @@ function ClientActions({ application }: { application: ApplicationDetail }) {
         </p>
       ) : null}
       <div className="flex justify-end">
-        <Button type="submit" disabled={offerMutation.isPending}>
+        <Button
+          className="rounded-full px-5 font-bold"
+          type="submit"
+          disabled={offerMutation.isPending}
+        >
           {offerMutation.isPending ? '제안 중...' : '금액 제안하기'}
         </Button>
       </div>
@@ -317,7 +321,7 @@ function FreelancerActions({ application }: { application: ApplicationDetail }) 
       <div className="flex justify-end gap-2">
         <Button
           variant="outline"
-          className="gap-1.5"
+          className="gap-1.5 rounded-full px-5 font-bold"
           disabled={respondMutation.isPending}
           onClick={() => respond('REJECTED')}
         >
@@ -325,7 +329,7 @@ function FreelancerActions({ application }: { application: ApplicationDetail }) 
           거절
         </Button>
         <Button
-          className="gap-1.5"
+          className="gap-1.5 rounded-full px-5 font-bold"
           disabled={respondMutation.isPending}
           onClick={() => respond('ACCEPTED')}
         >

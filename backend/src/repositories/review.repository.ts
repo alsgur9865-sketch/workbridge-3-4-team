@@ -94,3 +94,57 @@ export async function listUserReviews(userId: string, take: number) {
     reviews,
   };
 }
+
+export async function getPublicReviewHighlights(take: number) {
+  const prisma = getPrisma();
+  const completedReviewWhere = {
+    contract: {
+      project: {
+        transactionStatus: 'COMPLETED' as const,
+        deletedAt: null,
+      },
+    },
+  };
+
+  const [summary, demoReviewCount, completedProjectCount, reviews] = await Promise.all([
+    prisma.review.aggregate({
+      where: completedReviewWhere,
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+    prisma.review.count({
+      where: {
+        ...completedReviewWhere,
+        OR: [
+          { reviewer: { email: { endsWith: '@workbridge.test' } } },
+          { contract: { project: { title: { startsWith: '[테스트]' } } } },
+        ],
+      },
+    }),
+    prisma.project.count({
+      where: { transactionStatus: 'COMPLETED', deletedAt: null },
+    }),
+    prisma.review.findMany({
+      where: completedReviewWhere,
+      select: {
+        id: true,
+        rating: true,
+        content: true,
+        tags: true,
+        createdAt: true,
+        reviewer: { select: { role: true, email: true } },
+        contract: { select: { project: { select: { id: true, title: true } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+    }),
+  ]);
+
+  return {
+    averageRating: summary._avg.rating,
+    reviewCount: summary._count._all,
+    demoReviewCount,
+    completedProjectCount,
+    reviews,
+  };
+}

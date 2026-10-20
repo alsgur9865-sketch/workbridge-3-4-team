@@ -1,5 +1,4 @@
 import { Search } from 'lucide-react';
-import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ProjectCard } from '@/features/projects/ProjectCard';
 import { type ProjectRecruitmentStatus, useProjects } from '@/features/projects/projects.api';
@@ -11,17 +10,40 @@ export function ProjectListPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const bookmarkedOnly = searchParams.get('bookmarkedOnly') === 'true';
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('');
+  const search = searchParams.get('search') ?? '';
+  const category = searchParams.get('category') ?? '';
   const requestedStatus = searchParams.get('status') ?? (bookmarkedOnly ? '' : 'OPEN');
   const status = (
-    ['', 'SCHEDULED', 'OPEN', 'CLOSED'].includes(requestedStatus) ? requestedStatus : 'OPEN'
+    ['', 'SCHEDULED', 'OPEN', 'CLOSED'].includes(requestedStatus)
+      ? requestedStatus
+      : requestedStatus === 'ALL'
+        ? ''
+        : 'OPEN'
   ) as ProjectRecruitmentStatus | '';
-  const [skill, setSkill] = useState('');
-  const [minBudget, setMinBudget] = useState('');
-  const [maxBudget, setMaxBudget] = useState('');
-  const [sort, setSort] = useState<'newest' | 'budgetLow' | 'budgetHigh' | 'deadline'>('newest');
-  const [page, setPage] = useState(1);
+  const skill = searchParams.get('skill') ?? '';
+  const minBudget = searchParams.get('minBudget') ?? '';
+  const maxBudget = searchParams.get('maxBudget') ?? '';
+  const requestedSort = searchParams.get('sort') ?? 'newest';
+  const sort = (
+    ['newest', 'budgetLow', 'budgetHigh', 'deadline'].includes(requestedSort)
+      ? requestedSort
+      : 'newest'
+  ) as 'newest' | 'budgetLow' | 'budgetHigh' | 'deadline';
+  const requestedPage = Number(searchParams.get('page') ?? '1');
+  const page = Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+
+  function updateFilters(
+    updates: Record<string, string | null>,
+    options: { resetPage?: boolean } = {},
+  ) {
+    const nextParams = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(updates)) {
+      if (value) nextParams.set(key, value);
+      else nextParams.delete(key);
+    }
+    if (options.resetPage !== false) nextParams.delete('page');
+    setSearchParams(nextParams, { replace: true });
+  }
   const projectsQuery = useProjects({
     page,
     limit: 9,
@@ -39,14 +61,12 @@ export function ProjectListPage() {
   const meta = projectsQuery.data?.meta;
 
   return (
-    <main className="min-h-[70vh] bg-slate-50">
-      <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-12 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+    <main className="min-h-[70vh] bg-[#f5f5f7]">
+      <section className="soft-grid bg-[#f5f5f7]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-14 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8 lg:py-20">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.18em] text-brand-600">
-              Projects
-            </p>
-            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+            <p className="section-eyebrow">모집 중인 프로젝트</p>
+            <h1 className="mt-3 text-4xl font-black tracking-[-0.045em] text-[#1d1d1f] sm:text-5xl">
               나에게 맞는 프로젝트 찾기
             </h1>
             <p className="mt-3 text-slate-600">
@@ -55,7 +75,7 @@ export function ProjectListPage() {
           </div>
           {user?.role === 'CLIENT' && (
             <Link
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-600 px-5 text-sm font-bold text-white hover:bg-brand-700"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-[#0071e3] px-5 text-sm font-bold text-white shadow-[0_12px_28px_rgba(0,113,227,0.2)] transition hover:-translate-y-0.5 hover:bg-[#0077ed]"
               to="/projects/new"
             >
               프로젝트 등록하기
@@ -75,7 +95,7 @@ export function ProjectListPage() {
             </p>
           </div>
         )}
-        <div className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_12rem_12rem]">
+        <div className="grid gap-3 rounded-[1.75rem] border border-black/5 bg-white p-4 shadow-[0_16px_45px_rgba(15,23,42,0.07)] md:grid-cols-[1fr_12rem_12rem]">
           <label className="relative block">
             <span className="sr-only">프로젝트 검색</span>
             <Search
@@ -84,10 +104,7 @@ export function ProjectListPage() {
             />
             <input
               className="h-12 w-full rounded-xl border border-slate-200 pl-12 pr-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => updateFilters({ search: event.target.value })}
               placeholder="프로젝트명 또는 기술 검색"
               type="search"
               value={search}
@@ -97,10 +114,7 @@ export function ProjectListPage() {
             <span className="sr-only">카테고리 선택</span>
             <select
               className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-              onChange={(event) => {
-                setCategory(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => updateFilters({ category: event.target.value })}
               value={category}
             >
               <option value="">전체 카테고리</option>
@@ -112,12 +126,7 @@ export function ProjectListPage() {
             <span className="sr-only">모집 상태 선택</span>
             <select
               className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-              onChange={(event) => {
-                const nextParams = new URLSearchParams(searchParams);
-                nextParams.set('status', event.target.value);
-                setSearchParams(nextParams);
-                setPage(1);
-              }}
+              onChange={(event) => updateFilters({ status: event.target.value || 'ALL' })}
               value={status}
             >
               <option value="">전체 상태</option>
@@ -128,15 +137,12 @@ export function ProjectListPage() {
           </label>
         </div>
 
-        <div className="mt-3 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_12rem_auto]">
+        <div className="mt-3 grid gap-3 rounded-[1.75rem] border border-black/5 bg-white p-4 shadow-[0_16px_45px_rgba(15,23,42,0.07)] sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_12rem_auto]">
           <label>
             <span className="sr-only">필요 기술</span>
             <input
               className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-              onChange={(event) => {
-                setSkill(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => updateFilters({ skill: event.target.value })}
               placeholder="기술 필터 (예: React)"
               value={skill}
             />
@@ -146,10 +152,7 @@ export function ProjectListPage() {
             <input
               className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
               min="0"
-              onChange={(event) => {
-                setMinBudget(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => updateFilters({ minBudget: event.target.value })}
               placeholder="최소 예산"
               type="number"
               value={minBudget}
@@ -160,10 +163,7 @@ export function ProjectListPage() {
             <input
               className="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
               min="0"
-              onChange={(event) => {
-                setMaxBudget(event.target.value);
-                setPage(1);
-              }}
+              onChange={(event) => updateFilters({ maxBudget: event.target.value })}
               placeholder="최대 예산"
               type="number"
               value={maxBudget}
@@ -173,10 +173,7 @@ export function ProjectListPage() {
             <span className="sr-only">정렬 기준</span>
             <select
               className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
-              onChange={(event) => {
-                setSort(event.target.value as typeof sort);
-                setPage(1);
-              }}
+              onChange={(event) => updateFilters({ sort: event.target.value })}
               value={sort}
             >
               <option value="newest">최신순</option>
@@ -194,11 +191,13 @@ export function ProjectListPage() {
             }`}
             onClick={() => {
               if (!user) {
-                navigate('/login');
+                navigate('/login', { state: { returnTo: '/projects?bookmarkedOnly=true' } });
                 return;
               }
-              setSearchParams(bookmarkedOnly ? {} : { bookmarkedOnly: 'true' });
-              setPage(1);
+              updateFilters({
+                bookmarkedOnly: bookmarkedOnly ? null : 'true',
+                status: bookmarkedOnly ? null : 'ALL',
+              });
             }}
             type="button"
           >
@@ -258,14 +257,7 @@ export function ProjectListPage() {
             <button
               className="mt-3 text-sm font-bold text-brand-700 hover:underline"
               onClick={() => {
-                setSearch('');
-                setCategory('');
-                setSkill('');
-                setMinBudget('');
-                setMaxBudget('');
-                setSort('newest');
-                setSearchParams({});
-                setPage(1);
+                setSearchParams({}, { replace: true });
               }}
               type="button"
             >
@@ -279,7 +271,7 @@ export function ProjectListPage() {
             <button
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
               disabled={page === 1}
-              onClick={() => setPage((current) => current - 1)}
+              onClick={() => updateFilters({ page: String(page - 1) }, { resetPage: false })}
               type="button"
             >
               이전
@@ -290,7 +282,7 @@ export function ProjectListPage() {
             <button
               className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
               disabled={page === meta.totalPages}
-              onClick={() => setPage((current) => current + 1)}
+              onClick={() => updateFilters({ page: String(page + 1) }, { resetPage: false })}
               type="button"
             >
               다음

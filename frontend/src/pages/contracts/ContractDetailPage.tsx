@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, Circle, PartyPopper, PenLine, Star } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { WorkflowPageFrame } from '@/components/WorkflowPageFrame';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { formatDate, formatWon, getApplicationErrorMessage } from '@/features/applications/format';
@@ -72,28 +73,30 @@ function ContractDocument({
   ];
 
   return (
-    <section className="mx-auto max-w-3xl px-5 py-12 sm:px-6">
+    <WorkflowPageFrame>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-brand-600">프로젝트 용역 계약서</p>
+        <p className="text-sm font-bold text-[#0071e3]">프로젝트 용역 계약서</p>
         <ContractStatusBadge status={contract.status} />
       </div>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">{contract.projectTitle}</h1>
+      <h1 className="mt-2 text-4xl font-black tracking-[-0.035em] sm:text-5xl">
+        {contract.projectTitle}
+      </h1>
 
       {contract.projectTransactionStatus === 'COMPLETED' ? (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 px-4 py-3">
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-amber-50 px-5 py-4">
           <p className="flex items-center gap-2 text-sm font-semibold text-amber-800">
             <Star className="size-4" aria-hidden="true" />
             프로젝트가 완료되었습니다. 함께한 상대방에게 리뷰를 남겨 주세요.
           </p>
           <Link
-            className="inline-flex h-9 items-center justify-center rounded-md bg-brand-600 px-3 text-sm font-medium text-white hover:bg-brand-700"
+            className="inline-flex h-10 items-center justify-center rounded-full bg-[#0071e3] px-4 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#0077ed]"
             to={`/contracts/${contract.id}/review`}
           >
             리뷰 작성하기
           </Link>
         </div>
       ) : contract.status === 'SIGNED' ? (
-        <p className="mt-6 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+        <p className="mt-8 flex items-center gap-2 rounded-2xl bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-700">
           <PartyPopper className="size-4" aria-hidden="true" />
           양측 서명이 완료되어 계약이 체결되었습니다. 결제 완료 후 결과물을 제출하고 확인할 수
           있습니다.
@@ -103,13 +106,13 @@ function ContractDocument({
       {contract.status === 'SIGNED' ? (
         <Link
           to={`/contracts/${contract.id}/delivery`}
-          className="mt-4 inline-flex rounded-xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-700"
+          className="mt-4 inline-flex rounded-full bg-[#0071e3] px-5 py-3 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:bg-[#0077ed]"
         >
           결과물 제출 · 확인
         </Link>
       ) : null}
 
-      <article className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <article className="mt-8 rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8">
         <dl className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
             <dt className="text-slate-500">계약 금액</dt>
@@ -130,7 +133,7 @@ function ContractDocument({
         </dl>
 
         <h2 className="mt-8 text-sm font-bold text-slate-800">계약 조건</h2>
-        <p className="mt-3 whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm leading-7 text-slate-700">
+        <p className="mt-3 whitespace-pre-line rounded-2xl bg-[#f5f5f7] p-5 text-sm leading-7 text-slate-700">
           {content?.terms ?? '-'}
         </p>
 
@@ -139,7 +142,7 @@ function ContractDocument({
           {parties.map((party) => (
             <li
               key={party.label}
-              className="flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3"
+              className="flex items-center gap-3 rounded-2xl border border-black/5 bg-[#fbfbfd] px-4 py-3"
             >
               {party.signedAt ? (
                 <CheckCircle2 className="size-5 text-emerald-600" aria-hidden="true" />
@@ -160,7 +163,7 @@ function ContractDocument({
       </article>
 
       {canSign ? (
-        <div className="mt-6 grid gap-4 rounded-2xl border border-brand-200 bg-brand-50 p-6">
+        <div className="mt-6 grid gap-4 rounded-[2rem] border border-blue-100 bg-blue-50/80 p-6 shadow-[0_18px_55px_rgba(0,113,227,0.08)]">
           <label className="flex items-start gap-3 text-sm font-semibold text-slate-800">
             <input
               type="checkbox"
@@ -177,7 +180,7 @@ function ContractDocument({
           ) : null}
           <div className="flex justify-end">
             <Button
-              className="gap-1.5"
+              className="gap-1.5 rounded-full px-5 font-bold"
               disabled={!agreed || signMutation.isPending}
               onClick={() => signMutation.mutate()}
             >
@@ -195,6 +198,6 @@ function ContractDocument({
       {contract.status === 'SIGNED' ? (
         <PaymentAction contract={contract} user={user} isClient={isClient} />
       ) : null}
-    </section>
+    </WorkflowPageFrame>
   );
 }

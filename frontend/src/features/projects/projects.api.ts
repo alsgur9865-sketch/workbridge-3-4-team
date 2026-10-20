@@ -221,6 +221,9 @@ export function usePriceEstimate() {
 
 export function getProjectErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
+    if (error.response?.status === 401) {
+      return '로그인이 필요한 기능입니다.';
+    }
     const message = error.response?.data?.error?.message;
     if (typeof message === 'string') {
       return message;

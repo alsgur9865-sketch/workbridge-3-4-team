@@ -62,6 +62,11 @@ npm run typecheck
 npm test
 npm run build
 npm run db:studio
+npm run db:seed:showcase
 ```
+
+`npm run db:seed:showcase` adds or refreshes homepage projects, one completed workflow, and
+privacy-safe review examples without deleting existing development data. It is idempotent and blocked
+when `NODE_ENV=production`.
 
 Read `docs/SETUP.md` before connecting GitHub, Supabase, Vercel, or Render.

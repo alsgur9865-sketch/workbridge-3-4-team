@@ -6,6 +6,17 @@ export const reviewRouter = Router();
 
 /**
  * @openapi
+ * /reviews/highlights:
+ *   get:
+ *     summary: Public aggregate metrics and recent reviews from completed projects
+ *     tags: [Reviews]
+ *     responses:
+ *       200: { description: Completed project count, rating summary, and recent reviews }
+ */
+reviewRouter.get('/reviews/highlights', reviewController.getReviewHighlights);
+
+/**
+ * @openapi
  * components:
  *   schemas:
  *     Review:

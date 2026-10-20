@@ -23,7 +23,7 @@ export function PaymentAction({
 
   if (!isClient) {
     return (
-      <p className="mt-6 rounded-xl bg-white px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200">
+      <p className="mt-6 rounded-2xl bg-white px-5 py-4 text-sm text-slate-600 shadow-[0_16px_45px_rgba(15,23,42,0.06)] ring-1 ring-black/5">
         의뢰인의 결제를 기다리고 있습니다.
       </p>
     );
@@ -70,16 +70,16 @@ export function PaymentAction({
     (prepareMutation.isError ? getApplicationErrorMessage(prepareMutation.error) : null);
 
   return (
-    <div className="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-6">
+    <div className="mt-6 rounded-[2rem] bg-gradient-to-br from-[#1d1d1f] to-[#303033] p-6 text-white shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="font-bold text-slate-900">계약금 결제</p>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="font-bold">계약금 결제</p>
+          <p className="mt-1 text-sm text-[#d2d2d7]">
             계약 금액 {formatWon(contract.agreedAmount)}을 토스페이먼츠 테스트 결제로 진행합니다.
           </p>
         </div>
         <Button
-          className="gap-1.5"
+          className="gap-1.5 rounded-full bg-white px-5 font-bold text-[#1d1d1f] hover:bg-[#f5f5f7]"
           disabled={prepareMutation.isPending || windowOpen}
           onClick={() => void startPayment()}
         >
