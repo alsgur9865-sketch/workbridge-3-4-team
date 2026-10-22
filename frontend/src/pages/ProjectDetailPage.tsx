@@ -1,4 +1,11 @@
-import { ArrowLeft, BriefcaseBusiness, CalendarDays, Pencil, Trash2 } from 'lucide-react';
+import {
+  ArrowLeft,
+  BriefcaseBusiness,
+  CalendarDays,
+  Pencil,
+  ShieldCheck,
+  Trash2,
+} from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useState } from 'react';
 import {
@@ -7,6 +14,7 @@ import {
   useProject,
 } from '@/features/projects/projects.api';
 import { BookmarkButton } from '@/features/projects/BookmarkButton';
+import { formatProjectCategory } from '@/features/projects/format';
 import { applicationStatusLabels } from '@/features/applications/format';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -54,18 +62,18 @@ export function ProjectDetailPage() {
   }
 
   return (
-    <main className="min-h-[70vh] bg-slate-50">
-      <div className="mx-auto max-w-5xl px-5 py-10 sm:px-6 lg:px-8">
+    <main className="soft-grid min-h-[70vh] bg-[#f5f5f7]">
+      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 lg:px-8 lg:py-16">
         <Link
-          className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-brand-700"
+          className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-black/5 transition hover:text-[#0071e3]"
           to="/projects"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           프로젝트 목록
         </Link>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_18rem]">
-          <article className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
+        <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_20rem] lg:items-start">
+          <article className="overflow-hidden rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-9 lg:p-11">
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
                 {project.recruitmentStatus === 'OPEN'
@@ -74,15 +82,17 @@ export function ProjectDetailPage() {
                     ? '모집 예정'
                     : '모집 종료'}
               </span>
-              <span className="text-sm font-bold text-slate-500">{project.category}</span>
+              <span className="text-sm font-bold text-slate-500">
+                {formatProjectCategory(project.category)}
+              </span>
             </div>
-            <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+            <h1 className="mt-6 break-keep text-3xl font-black tracking-[-0.045em] text-[#1d1d1f] [overflow-wrap:anywhere] sm:text-4xl sm:leading-[1.08] lg:text-5xl">
               {project.title}
             </h1>
             <div className="mt-5 flex flex-wrap gap-2">
               {project.skills.map((skill) => (
                 <span
-                  className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700"
+                  className="rounded-full bg-[#f5f5f7] px-3 py-1.5 text-xs font-bold text-slate-700 ring-1 ring-black/5"
                   key={skill}
                 >
                   {skill}
@@ -90,23 +100,23 @@ export function ProjectDetailPage() {
               ))}
             </div>
 
-            <section className="mt-9 border-t border-slate-100 pt-8">
+            <section className="mt-10 border-t border-black/5 pt-9">
               <h2 className="text-xl font-black text-slate-950">프로젝트 설명</h2>
               <p className="mt-4 whitespace-pre-wrap leading-8 text-slate-700">
                 {project.description}
               </p>
             </section>
 
-            <section className="mt-9 border-t border-slate-100 pt-8">
+            <section className="mt-10 border-t border-black/5 pt-9">
               <h2 className="text-xl font-black text-slate-950">일정</h2>
               <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-slate-50 p-4">
+                <div className="rounded-2xl bg-[#f5f5f7] p-5 ring-1 ring-black/5">
                   <dt className="text-sm font-bold text-slate-500">모집 마감</dt>
                   <dd className="mt-2 font-black text-slate-900">
                     {dateFormatter.format(new Date(project.recruitmentDeadline))}
                   </dd>
                 </div>
-                <div className="rounded-2xl bg-slate-50 p-4">
+                <div className="rounded-2xl bg-[#f5f5f7] p-5 ring-1 ring-black/5">
                   <dt className="text-sm font-bold text-slate-500">작업 기간</dt>
                   <dd className="mt-2 font-black text-slate-900">
                     {dateFormatter.format(new Date(project.workStartAt))} ~{' '}
@@ -117,9 +127,9 @@ export function ProjectDetailPage() {
             </section>
           </article>
 
-          <aside className="h-fit rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          <aside className="h-fit rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_20px_55px_rgba(15,23,42,0.1)] lg:sticky lg:top-24">
             <p className="text-sm font-bold text-slate-500">예상 예산</p>
-            <p className="mt-2 text-2xl font-black text-slate-950">
+            <p className="mt-2 text-3xl font-black tracking-[-0.04em] text-[#1d1d1f]">
               {currencyFormatter.format(project.budget)}원
             </p>
             <div className="mt-6 flex items-start gap-3 border-t border-slate-100 pt-5">
@@ -142,7 +152,8 @@ export function ProjectDetailPage() {
             <div className="mt-6">
               {!user ? (
                 <Link
-                  className="block rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white"
+                  className="block rounded-full bg-[#0071e3] px-4 py-3 text-center text-sm font-bold text-white shadow-[0_12px_28px_rgba(0,113,227,0.2)] transition hover:-translate-y-0.5 hover:bg-[#0077ed]"
+                  state={{ returnTo: `/projects/${project.id}` }}
                   to="/login"
                 >
                   로그인하고 참여하기
@@ -159,7 +170,7 @@ export function ProjectDetailPage() {
                   </div>
                 ) : project.recruitmentStatus === 'OPEN' ? (
                   <Link
-                    className="block rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white hover:bg-brand-700"
+                    className="block rounded-full bg-[#0071e3] px-4 py-3 text-center text-sm font-bold text-white shadow-[0_12px_28px_rgba(0,113,227,0.2)] transition hover:-translate-y-0.5 hover:bg-[#0077ed]"
                     to={`/projects/${project.id}/apply`}
                   >
                     지원하기
@@ -178,7 +189,7 @@ export function ProjectDetailPage() {
               ) : null}
               {canManageProject && (
                 <Link
-                  className="block rounded-xl bg-brand-600 px-4 py-3 text-center text-sm font-bold text-white hover:bg-brand-700"
+                  className="block rounded-full bg-[#0071e3] px-4 py-3 text-center text-sm font-bold text-white shadow-[0_12px_28px_rgba(0,113,227,0.2)] transition hover:-translate-y-0.5 hover:bg-[#0077ed]"
                   to={`/projects/${project.id}/applications`}
                 >
                   지원자 보기
@@ -186,6 +197,11 @@ export function ProjectDetailPage() {
               )}
             </div>
             <BookmarkButton projectId={project.id} isBookmarked={project.isBookmarked} />
+
+            <div className="mt-5 flex gap-3 rounded-2xl bg-[#f5f5f7] p-4 text-sm text-slate-600">
+              <ShieldCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" aria-hidden="true" />
+              <p className="leading-6">계약, 결제, 납품 상태를 한곳에서 기록하고 확인합니다.</p>
+            </div>
 
             {canManageProject ? (
               <div className="mt-7 grid gap-2 border-t border-slate-100 pt-5">

@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Download, FileCheck2, Upload } from 'lucide-react';
+import { Download, FileCheck2, Upload } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+import { WorkflowBackLink, WorkflowPageFrame } from '@/components/WorkflowPageFrame';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import * as api from '@/features/deliveries/api';
@@ -70,34 +71,39 @@ function DeliveryContent({ data, isClient }: { data: api.DeliveryPageData; isCli
     },
   });
   const delivery = data.delivery;
+  const currentStep = !delivery ? 0 : delivery.status === 'APPROVED' ? 2 : 1;
   return (
-    <section className="mx-auto max-w-4xl px-5 py-12 sm:px-6">
-      <Link
-        to={`/contracts/${data.contractId}`}
-        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-brand-600"
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        계약서로 돌아가기
-      </Link>
+    <WorkflowPageFrame size="wide">
+      <WorkflowBackLink to={`/contracts/${data.contractId}`}>계약서로 돌아가기</WorkflowBackLink>
       <div className="mt-8 flex items-center gap-3">
-        <span className="rounded-2xl bg-brand-50 p-3 text-brand-600">
+        <span className="rounded-2xl bg-white p-3 text-[#0071e3] shadow-[0_14px_35px_rgba(15,23,42,0.08)]">
           <FileCheck2 aria-hidden="true" />
         </span>
         <div>
-          <p className="text-sm font-semibold text-brand-600">프로젝트 마무리</p>
-          <h1 className="mt-1 text-3xl font-bold">결과물 제출 · 확인</h1>
+          <p className="text-sm font-bold text-[#0071e3]">프로젝트 마무리</p>
+          <h1 className="mt-1 text-4xl font-black tracking-[-0.035em] sm:text-5xl">
+            결과물 제출 · 확인
+          </h1>
         </div>
       </div>
-      <p className="mt-3 text-slate-600">{data.projectTitle}</p>
-      <ol className="mt-8 grid grid-cols-3 gap-2 text-center text-sm font-semibold">
-        {['1. 결과물 제출', '2. 의뢰인 확인', '3. 승인 및 정산'].map((label) => (
-          <li key={label} className="rounded-xl bg-slate-100 px-2 py-3 text-slate-600">
+      <p className="mt-4 text-lg text-[#6e6e73]">{data.projectTitle}</p>
+      <ol className="mt-8 grid grid-cols-1 gap-2 rounded-[1.5rem] border border-black/5 bg-white/80 p-3 text-center text-sm font-bold shadow-[0_16px_45px_rgba(15,23,42,0.06)] sm:grid-cols-3">
+        {['1. 결과물 제출', '2. 의뢰인 확인', '3. 승인 및 정산'].map((label, index) => (
+          <li
+            key={label}
+            aria-current={index === currentStep ? 'step' : undefined}
+            className={
+              index <= currentStep
+                ? 'rounded-2xl bg-[#0071e3] px-2 py-3 text-white'
+                : 'rounded-2xl bg-[#f5f5f7] px-2 py-3 text-slate-600'
+            }
+          >
             {label}
           </li>
         ))}
       </ol>
       {delivery ? (
-        <article className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+        <article className="mt-8 rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-xl font-bold">제출된 결과물</h2>
             <span className="rounded-full bg-brand-50 px-3 py-1 text-sm font-semibold text-brand-700">
@@ -128,7 +134,7 @@ function DeliveryContent({ data, isClient }: { data: api.DeliveryPageData; isCli
                   <li key={path}>
                     <Button
                       variant="outline"
-                      className="max-w-full gap-2"
+                      className="max-w-full gap-2 rounded-full px-5 font-bold"
                       disabled={download.isPending}
                       onClick={() => download.mutate(path)}
                     >
@@ -180,7 +186,7 @@ function DeliveryContent({ data, isClient }: { data: api.DeliveryPageData; isCli
                 결과물을 확인했으며, 승인 시 프로젝트가 완료되고 정산되는 것에 동의합니다.
               </label>
               <Button
-                className="mt-5"
+                className="mt-5 rounded-full px-5 font-bold"
                 disabled={!data.canApprove || !agreed || approve.isPending}
                 onClick={() => approve.mutate()}
               >
@@ -202,7 +208,7 @@ function DeliveryContent({ data, isClient }: { data: api.DeliveryPageData; isCli
       ) : data.canSubmit ? (
         <DeliveryForm data={data} />
       ) : (
-        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-8 text-center">
+        <div className="mt-8 rounded-[2rem] border border-black/5 bg-white p-8 text-center shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
           <h2 className="text-lg font-bold">아직 제출된 결과물이 없습니다</h2>
           <p className="mt-3 text-sm leading-6 text-slate-500">
             {data.projectTransactionStatus === 'IN_PROGRESS'
@@ -211,7 +217,7 @@ function DeliveryContent({ data, isClient }: { data: api.DeliveryPageData; isCli
           </p>
         </div>
       )}
-    </section>
+    </WorkflowPageFrame>
   );
 }
 
@@ -274,7 +280,7 @@ function DeliveryForm({ data }: { data: api.DeliveryPageData }) {
     <form
       noValidate
       onSubmit={handleSubmit}
-      className="mt-8 grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
+      className="mt-8 grid gap-6 rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8"
     >
       <div>
         <h2 className="text-xl font-bold">완성한 결과물을 전달해 주세요</h2>
@@ -294,7 +300,7 @@ function DeliveryForm({ data }: { data: api.DeliveryPageData }) {
           disabled={busy}
           onChange={(event) => setMessage(event.target.value)}
           placeholder="완료한 작업, 결과물 사용 방법, 확인할 사항을 적어 주세요."
-          className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none"
+          className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f5f5f7] px-4 py-3.5 text-sm outline-none transition focus:border-[#0071e3] focus:bg-white focus:ring-4 focus:ring-blue-100"
         />
         <p className="mt-1 text-right text-xs text-slate-400">{message.length} / 5,000자</p>
       </div>
@@ -310,7 +316,7 @@ function DeliveryForm({ data }: { data: api.DeliveryPageData }) {
           disabled={busy}
           onChange={(event) => setResultUrl(event.target.value)}
           placeholder="https://"
-          className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm"
+          className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f5f5f7] px-4 py-3.5 text-sm outline-none transition focus:border-[#0071e3] focus:bg-white focus:ring-4 focus:ring-blue-100"
         />
       </div>
       <div>
@@ -332,7 +338,7 @@ function DeliveryForm({ data }: { data: api.DeliveryPageData }) {
           disabled={
             busy || !data.storageConfigured || attachments.length >= data.uploadPolicy.maxFiles
           }
-          className="mt-3 w-full rounded-xl border border-dashed border-slate-300 p-4 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2"
+          className="mt-3 w-full rounded-2xl border border-dashed border-black/15 bg-[#f5f5f7] p-4 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-4 file:py-2 file:font-bold"
           onChange={(event) => {
             const files = Array.from(event.target.files ?? []);
             event.target.value = '';
@@ -378,7 +384,7 @@ function DeliveryForm({ data }: { data: api.DeliveryPageData }) {
           </p>
         ) : null}
       </div>
-      <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-4 text-sm leading-6">
+      <label className="flex items-start gap-3 rounded-2xl bg-[#f5f5f7] p-4 text-sm leading-6">
         <input
           type="checkbox"
           className="mt-1.5"
@@ -394,7 +400,7 @@ function DeliveryForm({ data }: { data: api.DeliveryPageData }) {
         </p>
       ) : null}
       <div className="flex justify-end">
-        <Button type="submit" disabled={busy || !confirmed}>
+        <Button className="rounded-full px-5 font-bold" type="submit" disabled={busy || !confirmed}>
           {submit.isPending ? '제출 중...' : '최종 결과물 제출'}
         </Button>
       </div>

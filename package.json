@@ -29,6 +29,7 @@
     "db:migrate:init": "npm run db:migrate --workspace @workbridge/backend -- --name init",
     "db:deploy": "npm run db:deploy --workspace @workbridge/backend",
     "db:seed": "npm run db:seed --workspace @workbridge/backend",
+    "db:seed:showcase": "npm run db:seed:showcase --workspace @workbridge/backend",
     "db:studio": "npm run db:studio --workspace @workbridge/backend",
     "setup:env": "node scripts/setup-env.mjs"
   },

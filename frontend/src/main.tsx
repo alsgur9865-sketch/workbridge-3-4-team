@@ -7,6 +7,10 @@ import { AuthBootstrap } from '@/features/auth/components/AuthBootstrap';
 import { queryClient } from '@/lib/query-client';
 import '@/index.css';
 
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual';
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

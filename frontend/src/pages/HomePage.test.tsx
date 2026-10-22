@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { HomePage } from '@/pages/HomePage';
 
 const projects = [
@@ -67,11 +67,46 @@ vi.mock('@/features/projects/projects.api', () => ({
   },
 }));
 
+vi.mock('@/features/reviews/api', () => ({
+  useReviewHighlights: () => ({
+    data: {
+      averageRating: 5,
+      reviewCount: 2,
+      completedProjectCount: 1,
+      includesDemoData: true,
+      hasOnlyDemoReviews: true,
+      reviews: [
+        {
+          id: 'review-1',
+          rating: 5,
+          content: '요구사항이 명확했고 일정에 맞춰 만족스럽게 협업했습니다.',
+          tags: ['요구사항 명확', '일정 준수'],
+          reviewerRole: 'FREELANCER',
+          project: { id: 'completed-project-1', title: '예약 플랫폼 구축' },
+          createdAt: '2030-03-01T09:00:00.000Z',
+          isDemo: true,
+        },
+      ],
+    },
+    isPending: false,
+  }),
+}));
+
 function renderHomePage() {
   render(
     <MemoryRouter>
       <HomePage />
+      <LocationProbe />
     </MemoryRouter>,
+  );
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return (
+    <output data-testid="location">
+      {`${location.pathname}${decodeURIComponent(location.search)}${location.hash}`}
+    </output>
   );
 }
 
@@ -80,10 +115,31 @@ describe('HomePage', () => {
     renderHomePage();
 
     expect(
-      screen.getByRole('heading', { level: 1, name: /프로젝트와 전문가를/ }),
+      screen.getByRole('heading', { level: 1, name: /좋은 프로젝트와 좋은 전문가가/ }),
     ).toBeInTheDocument();
     expect(screen.getByText('프리랜서 매칭 대시보드 구축')).toBeInTheDocument();
     expect(screen.getByText('B2B 랜딩 페이지 리디자인')).toBeInTheDocument();
+    expect(screen.getByText('가입과 역할 설정')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '필요한 전문가를 찾으세요.' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: '내 역량에 맞는 일을 만나세요.' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: '프리랜서' }));
+
+    expect(
+      screen.getByRole('heading', { name: '내 역량에 맞는 일을 만나세요.' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /AI 예상 견적.*바로 분석하기/ })).toHaveAttribute(
+      'href',
+      '/projects/price-estimate',
+    );
+    expect(screen.getByText('분석 결과 예시')).toBeInTheDocument();
+    expect(screen.getByText('350만~520만원')).toBeInTheDocument();
+    expect(screen.getByText('완료 프로젝트')).toBeInTheDocument();
+    expect(screen.getByText('5.0 / 5')).toBeInTheDocument();
+    expect(screen.getByText('데모 데이터 포함')).toBeInTheDocument();
+    expect(screen.getByText(/요구사항이 명확했고/)).toBeInTheDocument();
   });
 
   it('filters projects by search term', () => {
@@ -96,5 +152,17 @@ describe('HomePage', () => {
     expect(screen.getByText('B2B 랜딩 페이지 리디자인')).toBeInTheDocument();
     expect(screen.queryByText('프리랜서 매칭 대시보드 구축')).not.toBeInTheDocument();
     expect(screen.getByText('프로젝트 1개')).toBeInTheDocument();
+    expect(screen.getByTestId('location')).toHaveTextContent('/?search=리디자인#projects');
+  });
+
+  it('filters projects with the popular category buttons', () => {
+    renderHomePage();
+
+    fireEvent.click(screen.getByRole('button', { name: '디자인' }));
+
+    expect(screen.getByText('B2B 랜딩 페이지 리디자인')).toBeInTheDocument();
+    expect(screen.queryByText('프리랜서 매칭 대시보드 구축')).not.toBeInTheDocument();
+    expect(screen.getByText('프로젝트 1개')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '디자인' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

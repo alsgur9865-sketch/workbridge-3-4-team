@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, FileSignature } from 'lucide-react';
+import { FileSignature } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
+import { WorkflowBackLink, WorkflowPageFrame } from '@/components/WorkflowPageFrame';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { formatWon, getApplicationErrorMessage } from '@/features/applications/format';
@@ -29,7 +30,7 @@ const contractSchema = z
 type ContractFormValues = z.infer<typeof contractSchema>;
 
 const inputClassName =
-  'mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100';
+  'mt-2 w-full rounded-2xl border border-black/10 bg-[#f5f5f7] px-4 py-3.5 text-sm outline-none transition focus:border-[#0071e3] focus:bg-white focus:ring-4 focus:ring-blue-100';
 
 function toDateInput(value: string) {
   const date = new Date(value);
@@ -142,19 +143,15 @@ function ContractForm({ application }: { application: ApplicationDetail }) {
   });
 
   return (
-    <section className="mx-auto max-w-3xl px-5 py-12 sm:px-6">
-      <Link
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-brand-700"
-        to={`/applications/${application.id}/price`}
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        금액 협의로
-      </Link>
+    <WorkflowPageFrame>
+      <WorkflowBackLink to={`/applications/${application.id}/price`}>금액 협의로</WorkflowBackLink>
 
-      <p className="mt-6 text-sm font-semibold text-brand-600">계약서 작성</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">{application.project.title}</h1>
+      <p className="mt-8 text-sm font-bold text-[#0071e3]">계약서 작성</p>
+      <h1 className="mt-2 text-4xl font-black tracking-[-0.035em] sm:text-5xl">
+        {application.project.title}
+      </h1>
 
-      <dl className="mt-8 grid gap-4 rounded-2xl border border-slate-200 bg-white p-6 text-sm shadow-sm sm:grid-cols-2">
+      <dl className="mt-8 grid gap-6 rounded-[2rem] border border-black/5 bg-white p-6 text-sm shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:grid-cols-2 sm:p-8">
         <div>
           <dt className="text-slate-500">프리랜서</dt>
           <dd className="mt-1 font-semibold">{application.freelancer.name ?? '이름 미등록'}</dd>
@@ -167,7 +164,11 @@ function ContractForm({ application }: { application: ApplicationDetail }) {
         </div>
       </dl>
 
-      <form className="mt-8 grid gap-6" onSubmit={onSubmit} noValidate>
+      <form
+        className="mt-6 grid gap-6 rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8"
+        onSubmit={onSubmit}
+        noValidate
+      >
         <div className="grid gap-6 sm:grid-cols-2">
           <div>
             <label className="text-sm font-bold text-slate-800" htmlFor="contractStartAt">
@@ -216,12 +217,16 @@ function ContractForm({ application }: { application: ApplicationDetail }) {
         ) : null}
 
         <div className="flex justify-end">
-          <Button type="submit" className="gap-1.5" disabled={createMutation.isPending}>
+          <Button
+            type="submit"
+            className="gap-1.5 rounded-full px-5 font-bold"
+            disabled={createMutation.isPending}
+          >
             <FileSignature className="size-4" aria-hidden="true" />
             {createMutation.isPending ? '작성 중...' : '계약서 작성 완료'}
           </Button>
         </div>
       </form>
-    </section>
+    </WorkflowPageFrame>
   );
 }

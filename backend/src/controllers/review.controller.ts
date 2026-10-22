@@ -25,3 +25,8 @@ export const getUserReviews: RequestHandler = async (request, response) => {
   const reviews = await reviewService.getUserReviews(userId);
   response.json({ success: true, data: reviews });
 };
+
+export const getReviewHighlights: RequestHandler = async (_request, response) => {
+  const highlights = await reviewService.getReviewHighlights();
+  response.json({ success: true, data: highlights });
+};
