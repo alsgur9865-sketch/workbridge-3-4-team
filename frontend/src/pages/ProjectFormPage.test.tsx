@@ -12,9 +12,16 @@ vi.mock('@/features/projects/projects.api', async (importOriginal) => ({
   useUpdateProject: () => ({ mutateAsync: vi.fn(), isPending: false, isError: false }),
 }));
 
-function renderForm() {
+function renderForm(
+  entry:
+    | string
+    | {
+        pathname: string;
+        state?: unknown;
+      } = '/projects/new',
+) {
   render(
-    <MemoryRouter initialEntries={['/projects/new']}>
+    <MemoryRouter initialEntries={[entry]}>
       <Routes>
         <Route path="/projects/new" element={<ProjectFormPage />} />
         <Route path="/projects/project-1" element={<h1>등록한 프로젝트 상세</h1>} />
@@ -75,6 +82,30 @@ describe('ProjectFormPage', () => {
       });
     },
   );
+
+  it('prefills a new project with the AI estimate handoff data', () => {
+    renderForm({
+      pathname: '/projects/new',
+      state: {
+        aiEstimate: {
+          title: 'AI 쇼핑몰 구축',
+          description: '상품과 주문을 관리하는 쇼핑몰 관리자 기능을 개발합니다.',
+          category: 'Web Development',
+          budget: 3_000_000,
+          skills: ['React', 'TypeScript'],
+        },
+      },
+    });
+
+    expect(screen.getByText(/AI 추천 견적과 프로젝트 정보를 불러왔습니다/)).toBeVisible();
+    expect(screen.getByLabelText('프로젝트 제목')).toHaveValue('AI 쇼핑몰 구축');
+    expect(screen.getByLabelText('상세 설명')).toHaveValue(
+      '상품과 주문을 관리하는 쇼핑몰 관리자 기능을 개발합니다.',
+    );
+    expect(screen.getByRole('combobox')).toHaveValue('Web Development');
+    expect(screen.getByRole('spinbutton')).toHaveValue(3_000_000);
+    expect(screen.getByLabelText(/필요 기술/)).toHaveValue('React, TypeScript');
+  });
 
   it.each([
     ['', '예산을 숫자로 입력해 주세요.'],

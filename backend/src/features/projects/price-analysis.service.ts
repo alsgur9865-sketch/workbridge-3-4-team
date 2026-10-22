@@ -53,7 +53,7 @@ export async function estimateProjectPrice(clientId: string, input: PriceEstimat
   }
 
   const prisma = getPrisma();
-  const model = env.OPENAI_MODEL ?? 'gpt-4o-mini';
+  const model = env.OPENAI_MODEL ?? 'gpt-6-luna';
   const analysis = await prisma.aiPriceAnalysis.create({
     data: {
       clientId,

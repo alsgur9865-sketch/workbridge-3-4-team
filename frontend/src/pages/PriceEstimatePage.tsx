@@ -1,7 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, CircleDollarSign, LockKeyhole, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
+<<<<<<< HEAD
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+=======
+import { Link, useNavigate } from 'react-router-dom';
+>>>>>>> origin/main
 import { z } from 'zod';
 import {
   getProjectErrorMessage,
@@ -42,6 +46,7 @@ function loadDraft() {
 }
 
 export function PriceEstimatePage() {
+  const navigate = useNavigate();
   const estimateMutation = usePriceEstimate();
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
@@ -75,10 +80,32 @@ export function PriceEstimatePage() {
     estimateMutation.mutate(input);
   }
 
+  function applyEstimateToProject() {
+    const result = estimateMutation.data;
+    const input = estimateMutation.variables;
+
+    if (!result || !input) {
+      return;
+    }
+
+    navigate('/projects/new', {
+      state: {
+        aiEstimate: {
+          title: input.title,
+          description: input.description,
+          category: input.category,
+          budget: Math.round(result.estimatedTotalAmount),
+          skills: input.skills,
+        },
+      },
+    });
+  }
+
   const fieldClassName =
     'mt-2 h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none transition hover:border-black/20 focus:border-[#0071e3] focus:ring-4 focus:ring-blue-100';
   const errorClassName = 'mt-1 text-xs font-bold text-rose-600';
   const result = estimateMutation.data;
+  const analyzedInput = estimateMutation.variables;
 
   return (
     <main className="soft-grid min-h-[70vh] bg-[#f5f5f7]">
@@ -240,6 +267,16 @@ export function PriceEstimatePage() {
                     <li key={assumption}>{assumption}</li>
                   ))}
                 </ul>
+
+                {analyzedInput && !estimateMutation.isPending ? (
+                  <button
+                    className="mt-7 w-full rounded-xl bg-brand-500 px-5 py-3.5 text-sm font-black text-white transition hover:bg-brand-400"
+                    type="button"
+                    onClick={applyEstimateToProject}
+                  >
+                    이 견적을 예산에 반영하고 프로젝트 등록하기
+                  </button>
+                ) : null}
               </div>
             ) : (
               <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 px-5 py-12 text-center">

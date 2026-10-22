@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { z } from 'zod';
 import { useAuthStore } from '@/stores/auth.store';
 import {
@@ -47,13 +47,25 @@ const projectFormSchema = z
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
+interface AiEstimateDraft {
+  title: string;
+  description: string;
+  category: string;
+  budget: number;
+  skills: string[];
+}
+
+interface ProjectFormLocationState {
+  aiEstimate?: AiEstimateDraft;
+}
+
 function toLocalDateTime(value: string) {
   const date = new Date(value);
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-function initialValues(project?: Project): ProjectFormValues {
+function initialValues(project?: Project, aiEstimate?: AiEstimateDraft): ProjectFormValues {
   if (project) {
     return {
       title: project.title,
@@ -64,6 +76,19 @@ function initialValues(project?: Project): ProjectFormValues {
       workEndAt: toLocalDateTime(project.workEndAt),
       recruitmentDeadline: toLocalDateTime(project.recruitmentDeadline),
       skills: project.skills.join(', '),
+    };
+  }
+
+  if (aiEstimate) {
+    return {
+      title: aiEstimate.title,
+      description: aiEstimate.description,
+      category: aiEstimate.category,
+      budget: aiEstimate.budget,
+      workStartAt: '',
+      workEndAt: '',
+      recruitmentDeadline: '',
+      skills: aiEstimate.skills.join(', '),
     };
   }
 
@@ -79,7 +104,13 @@ function initialValues(project?: Project): ProjectFormValues {
   };
 }
 
-function ProjectForm({ project }: { project?: Project }) {
+function ProjectForm({
+  project,
+  aiEstimate,
+}: {
+  project?: Project;
+  aiEstimate?: AiEstimateDraft;
+}) {
   const navigate = useNavigate();
   const createMutation = useCreateProject();
   const updateMutation = useUpdateProject(project?.id ?? '');
@@ -90,7 +121,7 @@ function ProjectForm({ project }: { project?: Project }) {
     formState: { errors },
   } = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
-    defaultValues: initialValues(project),
+    defaultValues: initialValues(project, aiEstimate),
   });
 
   async function onSubmit(values: ProjectFormValues) {
@@ -122,6 +153,12 @@ function ProjectForm({ project }: { project?: Project }) {
 
   return (
     <form className="mt-8 grid gap-6" noValidate onSubmit={handleSubmit(onSubmit)}>
+      {aiEstimate && !project ? (
+        <div className="rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 text-sm font-bold text-brand-800">
+          AI 추천 견적과 프로젝트 정보를 불러왔습니다. 일정만 입력한 뒤 등록해 주세요.
+        </div>
+      ) : null}
+
       <label className="font-bold text-slate-800">
         프로젝트 제목
         <input
@@ -243,9 +280,13 @@ function ProjectForm({ project }: { project?: Project }) {
 
 export function ProjectFormPage() {
   const { projectId } = useParams();
+  const location = useLocation();
   const user = useAuthStore((state) => state.user);
   const projectQuery = useProject(projectId ?? '', user?.role === 'CLIENT');
   const isEditing = Boolean(projectId);
+  const aiEstimate = !isEditing
+    ? (location.state as ProjectFormLocationState | null)?.aiEstimate
+    : undefined;
 
   if (user?.role !== 'CLIENT') {
     return (
@@ -308,7 +349,7 @@ export function ProjectFormPage() {
           <p className="mt-3 text-slate-600">
             프리랜서가 업무 범위를 정확히 이해할 수 있도록 구체적으로 작성해 주세요.
           </p>
-          <ProjectForm project={projectQuery.data} />
+          <ProjectForm project={projectQuery.data} aiEstimate={aiEstimate} />
         </section>
       </div>
     </main>
