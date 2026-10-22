@@ -1,11 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, CircleDollarSign, LockKeyhole, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-<<<<<<< HEAD
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-=======
-import { Link, useNavigate } from 'react-router-dom';
->>>>>>> origin/main
 import { z } from 'zod';
 import {
   getProjectErrorMessage,
@@ -46,11 +42,10 @@ function loadDraft() {
 }
 
 export function PriceEstimatePage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const estimateMutation = usePriceEstimate();
   const user = useAuthStore((state) => state.user);
-  const location = useLocation();
-  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
