@@ -60,26 +60,15 @@ function renderPage() {
 
 describe('PriceEstimatePage', () => {
   beforeEach(() => {
-<<<<<<< HEAD
     mutate.mockClear();
+    estimateState.data = undefined;
+    estimateState.variables = undefined;
     sessionStorage.clear();
     useAuthStore.setState({ accessToken: null, user: null, isInitialized: true });
   });
 
   it('explains the login requirement before a guest submits data', () => {
     renderPage();
-=======
-    estimateState.data = undefined;
-    estimateState.variables = undefined;
-  });
-
-  it('shows the AI estimate form and empty result state', () => {
-    render(
-      <MemoryRouter>
-        <PriceEstimatePage />
-      </MemoryRouter>,
-    );
->>>>>>> origin/main
 
     expect(screen.getByRole('heading', { name: 'AI 프로젝트 적정 가격 분석' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '로그인하고 분석하기' })).toBeInTheDocument();
