@@ -1,13 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ArrowLeft, CircleDollarSign, Sparkles } from 'lucide-react';
+import { ArrowLeft, CircleDollarSign, LockKeyhole, Sparkles } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import {
   getProjectErrorMessage,
   type PriceEstimateInput,
   usePriceEstimate,
 } from '@/features/projects/projects.api';
+import { useAuthStore } from '@/stores/auth.store';
 
 const formSchema = z.object({
   title: z.string().trim().min(2, '프로젝트 제목을 입력해 주세요.').max(200),
@@ -19,26 +20,49 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 const currencyFormatter = new Intl.NumberFormat('ko-KR');
+const DRAFT_STORAGE_KEY = 'workbridge-price-estimate-draft';
+
+const emptyFormValues: FormValues = {
+  title: '',
+  description: '',
+  category: '',
+  estimatedDays: 30,
+  skills: '',
+};
+
+function loadDraft() {
+  try {
+    const savedDraft = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!savedDraft) return emptyFormValues;
+    const parsedDraft = formSchema.safeParse(JSON.parse(savedDraft));
+    return parsedDraft.success ? parsedDraft.data : emptyFormValues;
+  } catch {
+    return emptyFormValues;
+  }
+}
 
 export function PriceEstimatePage() {
+  const location = useLocation();
   const navigate = useNavigate();
   const estimateMutation = usePriceEstimate();
+  const user = useAuthStore((state) => state.user);
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      category: '',
-      estimatedDays: 30,
-      skills: '',
-    },
+    defaultValues: loadDraft(),
   });
 
   function onSubmit(values: FormValues) {
+    if (!user) {
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(values));
+      navigate('/login', { state: { returnTo: location.pathname } });
+      return;
+    }
+
+    sessionStorage.removeItem(DRAFT_STORAGE_KEY);
     const input: PriceEstimateInput = {
       ...values,
       title: values.title.trim(),
@@ -73,33 +97,45 @@ export function PriceEstimatePage() {
   }
 
   const fieldClassName =
-    'mt-2 h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100';
+    'mt-2 h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none transition hover:border-black/20 focus:border-[#0071e3] focus:ring-4 focus:ring-blue-100';
   const errorClassName = 'mt-1 text-xs font-bold text-rose-600';
   const result = estimateMutation.data;
   const analyzedInput = estimateMutation.variables;
 
   return (
-    <main className="min-h-[70vh] bg-slate-50">
-      <div className="mx-auto max-w-6xl px-5 py-10 sm:px-6 lg:px-8">
+    <main className="soft-grid min-h-[70vh] bg-[#f5f5f7]">
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-16">
         <Link
-          className="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-brand-700"
+          className="inline-flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-black/5 transition hover:text-[#0071e3]"
           to="/projects"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           프로젝트 목록
         </Link>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-9">
-            <div className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
+        <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_0.82fr] lg:items-start">
+          <section className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-9 lg:p-11">
+            <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-[#0071e3] shadow-sm ring-1 ring-blue-100">
               <Sparkles className="size-6" aria-hidden="true" />
             </div>
-            <h1 className="mt-5 text-3xl font-black tracking-tight text-slate-950">
+            <h1 className="mt-6 text-3xl font-black tracking-[-0.04em] text-[#1d1d1f] sm:text-4xl">
               AI 프로젝트 적정 가격 분석
             </h1>
             <p className="mt-3 leading-7 text-slate-600">
               업무 범위와 기간, 필요한 기술을 바탕으로 예상 견적 범위와 판단 근거를 확인하세요.
             </p>
+
+            {!user ? (
+              <div className="mt-6 flex gap-3 rounded-2xl border border-blue-100 bg-blue-50/80 p-4 text-sm text-blue-950">
+                <LockKeyhole className="mt-0.5 size-5 shrink-0 text-[#0071e3]" aria-hidden="true" />
+                <div>
+                  <p className="font-black">로그인 후 AI 분석이 시작됩니다.</p>
+                  <p className="mt-1 leading-6 text-blue-800/80">
+                    입력한 내용은 이 기기에 임시 저장되어 로그인 후에도 그대로 이어집니다.
+                  </p>
+                </div>
+              </div>
+            ) : null}
 
             <form className="mt-8 grid gap-5" onSubmit={handleSubmit(onSubmit)}>
               <label className="font-bold text-slate-800">
@@ -115,7 +151,7 @@ export function PriceEstimatePage() {
               <label className="font-bold text-slate-800">
                 업무 내용
                 <textarea
-                  className="mt-2 min-h-40 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 outline-none focus:border-brand-400 focus:ring-4 focus:ring-brand-100"
+                  className="mt-2 min-h-40 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm leading-6 outline-none transition hover:border-black/20 focus:border-[#0071e3] focus:ring-4 focus:ring-blue-100"
                   placeholder="필요한 기능과 결과물을 구체적으로 입력해 주세요."
                   {...register('description')}
                 />
@@ -176,16 +212,20 @@ export function PriceEstimatePage() {
               ) : null}
 
               <button
-                className="h-12 rounded-xl bg-brand-600 px-6 font-black text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-12 rounded-full bg-[#0071e3] px-6 font-black text-white shadow-[0_12px_30px_rgba(0,113,227,0.22)] transition hover:-translate-y-0.5 hover:bg-[#0077ed] disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={estimateMutation.isPending}
                 type="submit"
               >
-                {estimateMutation.isPending ? 'AI가 분석하고 있습니다...' : '적정 가격 분석하기'}
+                {estimateMutation.isPending
+                  ? 'AI가 분석하고 있습니다...'
+                  : user
+                    ? '적정 가격 분석하기'
+                    : '로그인하고 분석하기'}
               </button>
             </form>
           </section>
 
-          <aside className="h-fit rounded-3xl bg-slate-950 p-6 text-white shadow-xl sm:p-8">
+          <aside className="h-fit overflow-hidden rounded-[2rem] bg-[#1d1d1f] p-6 text-white shadow-[0_28px_80px_rgba(15,23,42,0.2)] sm:p-8 lg:sticky lg:top-24">
             <div className="flex items-center gap-3">
               <CircleDollarSign className="size-7 text-brand-300" aria-hidden="true" />
               <h2 className="text-xl font-black">분석 결과</h2>
@@ -240,7 +280,9 @@ export function PriceEstimatePage() {
                   프로젝트 정보를 입력하면 분석 결과가 여기에 표시됩니다.
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-400">
-                  API 키가 없을 때는 설정 안내가 표시되고, 데이터는 전송되지 않습니다.
+                  {user
+                    ? 'API 키가 없을 때는 설정 안내가 표시되고, 데이터는 전송되지 않습니다.'
+                    : '로그인 후 입력한 정보를 그대로 이어서 분석할 수 있습니다.'}
                 </p>
               </div>
             )}

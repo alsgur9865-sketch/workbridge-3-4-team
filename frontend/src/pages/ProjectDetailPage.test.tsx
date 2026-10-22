@@ -151,4 +151,10 @@ describe('ProjectDetailPage permissions', () => {
     expect(screen.queryByRole('link', { name: '지원자 보기' })).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: '수정하기' })).not.toBeInTheDocument();
   });
+
+  it('shows the project category in Korean', () => {
+    renderPage();
+    expect(screen.getByText('웹 개발')).toBeInTheDocument();
+    expect(screen.queryByText('Web Development')).not.toBeInTheDocument();
+  });
 });

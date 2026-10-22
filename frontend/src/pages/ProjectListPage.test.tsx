@@ -1,9 +1,14 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import { ProjectListPage } from '@/pages/ProjectListPage';
 import { useAuthStore } from '@/stores/auth.store';
 
 const recommended = vi.hoisted(() => vi.fn());
+
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{decodeURIComponent(location.search)}</output>;
+}
 
 vi.mock('@/features/projects/projects.api', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/features/projects/projects.api')>();
@@ -120,5 +125,24 @@ describe('ProjectListPage', () => {
     );
     expect(screen.getByText('추천 프로젝트를 불러오지 못했습니다.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '추천 다시 불러오기' })).toBeInTheDocument();
+  });
+
+  it('restores project filters from the URL and keeps updates there', () => {
+    render(
+      <MemoryRouter initialEntries={['/projects?search=React&category=Design&sort=deadline']}>
+        <ProjectListPage />
+        <LocationProbe />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('searchbox', { name: '프로젝트 검색' })).toHaveValue('React');
+    expect(screen.getByRole('combobox', { name: '카테고리 선택' })).toHaveValue('Design');
+    expect(screen.getByRole('combobox', { name: '정렬 기준' })).toHaveValue('deadline');
+
+    fireEvent.change(screen.getByRole('textbox', { name: '필요 기술' }), {
+      target: { value: 'TypeScript' },
+    });
+
+    expect(screen.getByTestId('location')).toHaveTextContent('skill=TypeScript');
   });
 });

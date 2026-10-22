@@ -1,14 +1,10 @@
 import { CalendarDays, ChevronRight, Clock3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Project } from '@/features/projects/projects.api';
+import { formatProjectCategory } from '@/features/projects/format';
 import { BookmarkButton } from './BookmarkButton';
 
 const currencyFormatter = new Intl.NumberFormat('ko-KR');
-
-const categoryLabels: Record<string, string> = {
-  'Web Development': '웹 개발',
-  Design: '디자인',
-};
 
 const statusLabels = {
   SCHEDULED: '모집 예정',
@@ -34,20 +30,20 @@ function formatDeadline(deadline: string) {
 
 export function ProjectCard({ project }: { project: Project }) {
   return (
-    <article className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:border-brand-200 hover:shadow-xl hover:shadow-slate-200/70">
+    <article className="group relative flex h-full flex-col rounded-[1.75rem] border border-black/5 bg-white p-6 shadow-[0_12px_35px_rgba(15,23,42,0.06)] transition duration-500 ease-out hover:-translate-y-1.5 hover:border-blue-100 hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]">
       <div className="flex items-center justify-between gap-3">
         <span
           className={`rounded-full px-3 py-1 text-xs font-black ${
             project.recruitmentStatus === 'OPEN'
-              ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-slate-100 text-slate-600'
+              ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100'
+              : 'bg-slate-100 text-slate-600 ring-1 ring-slate-200'
           }`}
         >
           {statusLabels[project.recruitmentStatus]}
         </span>
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-500">
-            {categoryLabels[project.category] ?? project.category}
+            {formatProjectCategory(project.category)}
           </span>
           <div className="relative z-10">
             <BookmarkButton projectId={project.id} isBookmarked={project.isBookmarked} compact />
@@ -55,18 +51,18 @@ export function ProjectCard({ project }: { project: Project }) {
         </div>
       </div>
 
-      <h3 className="mt-5 text-xl font-black leading-7 text-slate-950 transition group-hover:text-brand-700">
+      <h3 className="mt-6 break-keep text-xl font-black leading-7 tracking-[-0.025em] text-[#1d1d1f] transition [overflow-wrap:anywhere] group-hover:text-[#0071e3]">
         <Link
-          className="after:absolute after:inset-0 after:rounded-2xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-brand-600 focus-visible:after:ring-offset-2"
+          className="after:absolute after:inset-0 after:rounded-[1.75rem] focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-[#0071e3] focus-visible:after:ring-offset-2"
           to={`/projects/${project.id}`}
         >
           {project.title}
         </Link>
       </h3>
-      <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{project.description}</p>
+      <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#6e6e73]">{project.description}</p>
 
       {project.recommendation && (
-        <p className="mt-3 text-sm font-bold text-brand-700">
+        <p className="mt-3 text-sm font-bold text-[#0071e3]">
           {[
             project.recommendation.matchedSkills.length > 0
               ? `기술 ${project.recommendation.matchedSkills.length}개 일치: ${project.recommendation.matchedSkills.join(', ')}`
@@ -81,7 +77,7 @@ export function ProjectCard({ project }: { project: Project }) {
       <div className="mt-5 flex flex-wrap gap-2">
         {project.skills.map((skill) => (
           <span
-            className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600"
+            className="rounded-full bg-[#f5f5f7] px-3 py-1.5 text-xs font-bold text-slate-600"
             key={skill}
           >
             {skill}
@@ -89,7 +85,7 @@ export function ProjectCard({ project }: { project: Project }) {
         ))}
       </div>
 
-      <div className="mt-auto grid grid-cols-2 gap-3 border-t border-slate-100 pt-5 text-sm">
+      <div className="mt-auto grid grid-cols-2 gap-3 border-t border-black/5 pt-5 text-sm">
         <div>
           <p className="text-xs font-semibold text-slate-400">예상 예산</p>
           <p className="mt-1 font-black text-slate-900">
@@ -110,7 +106,9 @@ export function ProjectCard({ project }: { project: Project }) {
           <CalendarDays className="size-4" aria-hidden="true" />
           모집 마감 {formatDeadline(project.recruitmentDeadline)}
         </span>
-        <ChevronRight className="size-5 text-brand-700" aria-hidden="true" />
+        <span className="flex size-8 items-center justify-center rounded-full bg-[#f5f5f7] text-[#0071e3] transition duration-300 group-hover:translate-x-1 group-hover:bg-blue-50">
+          <ChevronRight className="size-4" aria-hidden="true" />
+        </span>
       </div>
     </article>
   );

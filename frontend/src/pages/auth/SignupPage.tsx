@@ -26,7 +26,7 @@ const signupSchema = z
 type SignupFormValues = z.infer<typeof signupSchema>;
 
 const inputClassName =
-  'mt-2 h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100';
+  'mt-2 h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none transition hover:border-black/20 focus:border-[#0071e3] focus:ring-4 focus:ring-blue-100';
 
 export function SignupPage() {
   const navigate = useNavigate();
@@ -74,9 +74,9 @@ export function SignupPage() {
   });
 
   return (
-    <section className="bg-slate-50 px-5 py-14 sm:px-6 sm:py-20">
+    <section className="soft-grid bg-[#f5f5f7] px-5 py-14 sm:px-6 sm:py-20">
       <div className="mx-auto max-w-md">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-8">
+        <div className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-9">
           <p className="text-sm font-black text-brand-600">무료로 시작하기</p>
           <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">회원가입</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
@@ -162,7 +162,11 @@ export function SignupPage() {
               </p>
             ) : null}
 
-            <Button type="submit" className="mt-1 h-12 gap-2 rounded-xl font-bold" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="mt-1 h-12 gap-2 rounded-full font-bold shadow-[0_12px_28px_rgba(0,113,227,0.18)]"
+              disabled={isSubmitting}
+            >
               <UserPlus className="size-4" aria-hidden="true" />
               {isSubmitting ? '가입 중...' : '회원가입'}
             </Button>

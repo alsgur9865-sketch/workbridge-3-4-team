@@ -4,6 +4,9 @@ import type { CreateReviewInput } from '@/schemas/review.schema';
 import type { AuthUser } from '@/types/auth';
 
 const RECENT_REVIEW_LIMIT = 10;
+const PUBLIC_REVIEW_LIMIT = 3;
+const DEMO_EMAIL_SUFFIX = '@workbridge.test';
+const TEST_PROJECT_PREFIX = '[테스트]';
 
 type ReviewRecord = Awaited<ReturnType<typeof reviewRepository.createReview>>;
 
@@ -100,6 +103,31 @@ export async function getUserReviews(userId: string) {
     reviews: reviews.map((review) => ({
       ...toReviewDto(review),
       project: review.contract.project,
+    })),
+  };
+}
+
+export async function getReviewHighlights() {
+  const result = await reviewRepository.getPublicReviewHighlights(PUBLIC_REVIEW_LIMIT);
+
+  return {
+    averageRating:
+      result.averageRating === null ? null : Math.round(result.averageRating * 10) / 10,
+    reviewCount: result.reviewCount,
+    completedProjectCount: result.completedProjectCount,
+    includesDemoData: result.demoReviewCount > 0,
+    hasOnlyDemoReviews: result.reviewCount > 0 && result.demoReviewCount === result.reviewCount,
+    reviews: result.reviews.map((review) => ({
+      id: review.id,
+      rating: review.rating,
+      content: review.content,
+      tags: Array.isArray(review.tags) ? (review.tags as string[]) : [],
+      reviewerRole: review.reviewer.role,
+      project: review.contract.project,
+      createdAt: review.createdAt,
+      isDemo:
+        review.reviewer.email.endsWith(DEMO_EMAIL_SUFFIX) ||
+        review.contract.project.title.startsWith(TEST_PROJECT_PREFIX),
     })),
   };
 }

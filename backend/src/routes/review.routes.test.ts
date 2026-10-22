@@ -15,6 +15,7 @@ vi.mock('@/repositories/review.repository', () => ({
   listContractReviews: vi.fn(),
   findUserForReviews: vi.fn(),
   listUserReviews: vi.fn(),
+  getPublicReviewHighlights: vi.fn(),
 }));
 
 const { app } = await import('@/app');
@@ -281,5 +282,72 @@ describe('GET /users/:userId/reviews', () => {
       .get(`/api/v1/users/${randomUUID()}/reviews`)
       .set('Authorization', tokenFor(clientId, 'CLIENT'));
     expect(response.status).toBe(404);
+  });
+});
+
+describe('GET /reviews/highlights', () => {
+  it('returns privacy-safe review proof without authentication', async () => {
+    repository.getPublicReviewHighlights.mockResolvedValue({
+      averageRating: 4.75,
+      reviewCount: 2,
+      demoReviewCount: 0,
+      completedProjectCount: 1,
+      reviews: [
+        {
+          id: randomUUID(),
+          rating: 5,
+          content: '일정과 요구사항을 정확히 맞춰 만족스럽게 완료했습니다.',
+          tags: ['일정 준수', '높은 완성도'],
+          createdAt: new Date('2026-10-20T00:00:00.000Z'),
+          reviewer: { role: 'CLIENT', email: 'client@example.com' },
+          contract: { project: { id: randomUUID(), title: '브랜드 웹사이트 구축' } },
+        },
+      ],
+    } as never);
+
+    const response = await request(app).get('/api/v1/reviews/highlights');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({
+      averageRating: 4.8,
+      reviewCount: 2,
+      completedProjectCount: 1,
+      includesDemoData: false,
+      hasOnlyDemoReviews: false,
+    });
+    expect(response.body.data.reviews[0]).toMatchObject({
+      reviewerRole: 'CLIENT',
+      project: { title: '브랜드 웹사이트 구축' },
+    });
+    expect(response.body.data.reviews[0]).not.toHaveProperty('reviewer.email');
+  });
+
+  it('labels test-project reviews as demo content', async () => {
+    repository.getPublicReviewHighlights.mockResolvedValue({
+      averageRating: 5,
+      reviewCount: 1,
+      demoReviewCount: 1,
+      completedProjectCount: 1,
+      reviews: [
+        {
+          id: randomUUID(),
+          rating: 5,
+          content: '[테스트 리뷰] 요구사항이 명확했습니다.',
+          tags: ['요구사항 명확'],
+          createdAt: new Date('2026-10-20T00:00:00.000Z'),
+          reviewer: { role: 'FREELANCER', email: 'tester@example.com' },
+          contract: {
+            project: { id: randomUUID(), title: '[테스트] 관리자 대시보드 개발' },
+          },
+        },
+      ],
+    } as never);
+
+    const response = await request(app).get('/api/v1/reviews/highlights');
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.includesDemoData).toBe(true);
+    expect(response.body.data.hasOnlyDemoReviews).toBe(true);
+    expect(response.body.data.reviews[0].isDemo).toBe(true);
   });
 });

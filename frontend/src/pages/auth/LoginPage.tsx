@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { LogIn } from 'lucide-react';
+import { Check, LogIn, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -18,13 +18,17 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 interface LoginLocationState {
   signupCompleted?: boolean;
   email?: string;
+  returnTo?: string;
+}
+
+function getSafeReturnTo(value?: string) {
+  return value?.startsWith('/') && !value.startsWith('//') ? value : null;
 }
 
 const inputClassName =
-  'mt-2 h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100';
+  'mt-2 h-12 w-full rounded-2xl border border-black/10 bg-white px-4 text-sm outline-none transition hover:border-black/20 focus:border-[#0071e3] focus:ring-4 focus:ring-blue-100';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
 
 export function LoginPage() {
   const location = useLocation();
@@ -36,6 +40,7 @@ export function LoginPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const state = location.state as LoginLocationState | null;
+  const returnTo = getSafeReturnTo(state?.returnTo);
 
   const {
     register,
@@ -50,7 +55,7 @@ export function LoginPage() {
   });
 
   if (user) {
-    return <Navigate to={user.role ? '/' : '/select-role'} replace />;
+    return <Navigate to={user.role ? (returnTo ?? '/') : '/select-role'} replace />;
   }
 
   const onSubmit = handleSubmit(async (values) => {
@@ -61,7 +66,7 @@ export function LoginPage() {
 
       setSession(session.accessToken, session.user);
 
-      navigate(session.user.role ? '/' : '/select-role', {
+      navigate(session.user.role ? (returnTo ?? '/') : '/select-role', {
         replace: true,
       });
     } catch (error) {
@@ -74,16 +79,40 @@ export function LoginPage() {
   }
 
   return (
-    <section className="bg-slate-50 px-5 py-14 sm:px-6 sm:py-20">
-      <div className="mx-auto max-w-md">
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60 sm:p-8">
-          <p className="text-sm font-black text-brand-600">
-            다시 만나서 반가워요
-          </p>
+    <section className="soft-grid bg-[#f5f5f7] px-5 py-12 sm:px-6 sm:py-20">
+      <div className="mx-auto grid max-w-5xl gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <aside className="relative hidden overflow-hidden rounded-[2rem] bg-[#1d1d1f] p-10 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] lg:flex lg:flex-col lg:justify-between">
+          <div className="absolute -right-20 -top-20 size-72 rounded-full bg-blue-500/25 blur-3xl" />
+          <div className="relative">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-2 text-xs font-bold text-blue-100">
+              <Sparkles className="size-4" aria-hidden="true" />
+              다시 이어가는 협업
+            </span>
+            <h2 className="mt-7 text-4xl font-black leading-tight tracking-[-0.045em]">
+              로그인하면 다음 단계가 바로 이어집니다.
+            </h2>
+            <p className="mt-5 leading-7 text-white/60">
+              저장한 프로젝트와 지원 현황, 진행 중인 계약을 한곳에서 확인하세요.
+            </p>
+          </div>
+          <ul className="relative mt-12 grid gap-4 text-sm font-bold text-white/75">
+            {['프로젝트 탐색과 북마크', '지원부터 계약까지 한 흐름', '납품 완료 후 상호 리뷰'].map(
+              (item) => (
+                <li className="flex items-center gap-3" key={item}>
+                  <span className="flex size-6 items-center justify-center rounded-full bg-emerald-400 text-slate-950">
+                    <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+                  </span>
+                  {item}
+                </li>
+              ),
+            )}
+          </ul>
+        </aside>
 
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-            로그인
-          </h1>
+        <div className="rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-10">
+          <p className="text-sm font-black text-brand-600">다시 만나서 반가워요</p>
+
+          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">로그인</h1>
 
           <p className="mt-3 text-sm leading-6 text-slate-600">
             WorkBridge 계정으로 로그인하고 프로젝트와 지원 현황을 관리하세요.
@@ -98,16 +127,9 @@ export function LoginPage() {
             </p>
           ) : null}
 
-          <form
-            className="mt-8 grid gap-5"
-            onSubmit={onSubmit}
-            noValidate
-          >
+          <form className="mt-8 grid gap-5" onSubmit={onSubmit} noValidate>
             <div>
-              <label
-                className="text-sm font-bold text-slate-800"
-                htmlFor="login-email"
-              >
+              <label className="text-sm font-bold text-slate-800" htmlFor="login-email">
                 이메일
               </label>
 
@@ -122,17 +144,12 @@ export function LoginPage() {
               />
 
               {errors.email ? (
-                <p className="mt-2 text-sm text-red-600">
-                  {errors.email.message}
-                </p>
+                <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
               ) : null}
             </div>
 
             <div>
-              <label
-                className="text-sm font-bold text-slate-800"
-                htmlFor="login-password"
-              >
+              <label className="text-sm font-bold text-slate-800" htmlFor="login-password">
                 비밀번호
               </label>
 
@@ -147,30 +164,22 @@ export function LoginPage() {
               />
 
               {errors.password ? (
-                <p className="mt-2 text-sm text-red-600">
-                  {errors.password.message}
-                </p>
+                <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
               ) : null}
             </div>
 
             {submitError ? (
-              <p
-                className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700"
-                role="alert"
-              >
+              <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
                 {submitError}
               </p>
             ) : null}
 
             <Button
               type="submit"
-              className="mt-1 h-12 gap-2 rounded-xl font-bold"
+              className="mt-1 h-12 gap-2 rounded-full font-bold shadow-[0_12px_28px_rgba(0,113,227,0.18)]"
               disabled={isSubmitting}
             >
-              <LogIn
-                className="size-4"
-                aria-hidden="true"
-              />
+              <LogIn className="size-4" aria-hidden="true" />
 
               {isSubmitting ? '로그인 중...' : '로그인'}
             </Button>
@@ -179,23 +188,17 @@ export function LoginPage() {
           <div className="my-6 flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-200" />
 
-            <span className="text-xs font-semibold text-slate-400">
-              또는
-            </span>
+            <span className="text-xs font-semibold text-slate-400">또는</span>
 
             <div className="h-px flex-1 bg-slate-200" />
           </div>
 
           <button
             type="button"
-            className="flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 transition hover:bg-slate-50"
+            className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-black/10 bg-white text-sm font-bold text-slate-800 transition hover:border-black/20 hover:bg-[#f5f5f7]"
             onClick={handleGoogleLogin}
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className="size-5"
-            >
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5">
               <path
                 fill="#4285F4"
                 d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.38Z"
@@ -216,16 +219,12 @@ export function LoginPage() {
                 d="M12 5.94c1.47 0 2.79.51 3.83 1.5l2.87-2.87A9.64 9.64 0 0 0 12 2a10 10 0 0 0-8.96 5.48l3.35 2.59C7.18 7.7 9.39 5.94 12 5.94Z"
               />
             </svg>
-
             Google로 계속하기
           </button>
 
           <p className="mt-6 text-center text-sm text-slate-600">
             아직 계정이 없나요?{' '}
-            <Link
-              className="font-bold text-brand-700 hover:underline"
-              to="/signup"
-            >
+            <Link className="font-bold text-brand-700 hover:underline" to="/signup">
               회원가입
             </Link>
           </p>

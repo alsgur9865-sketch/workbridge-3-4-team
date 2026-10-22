@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Send } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { CheckCircle2, Send } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { WorkflowBackLink, WorkflowPageFrame } from '@/components/WorkflowPageFrame';
 import { Button } from '@/components/ui/button';
 import { AccessNotice } from '@/features/applications/components/AccessNotice';
 import { getApplicationErrorMessage } from '@/features/applications/format';
@@ -47,18 +48,14 @@ export function ContractReviewPage() {
   const otherReviews = data.reviews.filter((review) => review.reviewerId !== user.id);
 
   return (
-    <section className="mx-auto max-w-3xl px-5 py-12 sm:px-6">
-      <Link
-        className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-brand-700"
-        to={`/contracts/${contractId}`}
-      >
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        계약서로
-      </Link>
+    <WorkflowPageFrame>
+      <WorkflowBackLink to={`/contracts/${contractId}`}>계약서로</WorkflowBackLink>
 
-      <p className="mt-6 text-sm font-semibold text-brand-600">상호 리뷰</p>
-      <h1 className="mt-2 text-3xl font-bold tracking-tight">{data.projectTitle}</h1>
-      <p className="mt-3 text-slate-600">
+      <p className="mt-8 text-sm font-bold text-[#0071e3]">상호 리뷰</p>
+      <h1 className="mt-2 text-4xl font-black tracking-[-0.035em] sm:text-5xl">
+        {data.projectTitle}
+      </h1>
+      <p className="mt-4 text-lg text-[#6e6e73]">
         <b>{data.counterpart.name ?? '상대방'}</b>님과의 협업은 어떠셨나요?
       </p>
 
@@ -80,7 +77,9 @@ export function ContractReviewPage() {
         )}
       </div>
 
-      <h2 className="mt-12 text-lg font-bold">{data.counterpart.name ?? '상대방'}님이 남긴 리뷰</h2>
+      <h2 className="mt-12 text-xl font-black tracking-[-0.02em]">
+        {data.counterpart.name ?? '상대방'}님이 남긴 리뷰
+      </h2>
       {otherReviews.length === 0 ? (
         <p className="mt-3 text-sm text-slate-500">아직 상대방이 리뷰를 작성하지 않았습니다.</p>
       ) : (
@@ -90,7 +89,7 @@ export function ContractReviewPage() {
           ))}
         </div>
       )}
-    </section>
+    </WorkflowPageFrame>
   );
 }
 
@@ -123,7 +122,7 @@ function ReviewForm({ data }: { data: ContractReviews }) {
 
   return (
     <form
-      className="grid gap-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+      className="grid gap-6 rounded-[2rem] border border-black/5 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] sm:p-8"
       onSubmit={submit}
       noValidate
     >
@@ -171,7 +170,7 @@ function ReviewForm({ data }: { data: ContractReviews }) {
           value={content}
           onChange={(event) => setContent(event.target.value)}
           placeholder={`${data.counterpart.name ?? '상대방'}님과 함께 일한 경험을 들려주세요.`}
-          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className="mt-2 w-full rounded-2xl border border-black/10 bg-[#f5f5f7] px-4 py-3.5 text-sm outline-none transition focus:border-[#0071e3] focus:bg-white focus:ring-4 focus:ring-blue-100"
         />
         <p className="mt-1 text-right text-xs text-slate-400">{content.length} / 1000</p>
       </div>
@@ -183,7 +182,11 @@ function ReviewForm({ data }: { data: ContractReviews }) {
       ) : null}
 
       <div className="flex justify-end">
-        <Button type="submit" className="gap-1.5" disabled={createMutation.isPending}>
+        <Button
+          type="submit"
+          className="gap-1.5 rounded-full px-5 font-bold"
+          disabled={createMutation.isPending}
+        >
           <Send className="size-4" aria-hidden="true" />
           {createMutation.isPending ? '등록 중...' : '리뷰 등록'}
         </Button>
