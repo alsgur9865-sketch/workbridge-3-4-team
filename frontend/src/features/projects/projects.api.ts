@@ -213,6 +213,9 @@ export function usePriceEstimate() {
       const response = await apiClient.post<{ success: true; data: PriceEstimateResult }>(
         '/projects/price-estimate',
         input,
+        {
+          timeout: 30_000,
+        },
       );
       return response.data.data;
     },
